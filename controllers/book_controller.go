@@ -43,6 +43,7 @@ func CreateBook() gin.HandlerFunc {
 			Category:          book.Category,
 			PublishingCompany: book.PublishingCompany,
 			PublicationDate:   book.PublicationDate,
+			Description:       book.Description,
 		}
 
 		result, err := bookCollection.InsertOne(ctx, newBook)
@@ -90,7 +91,25 @@ func EditABook() gin.HandlerFunc {
 			return
 		}
 
-		update := bson.M{"bookName": book.BookName, "price": book.Price, "author": book.Author, "category": book.Category, "publishingCompany": book.PublishingCompany, "publicationDate": book.PublicationDate}
+		// update := bson.M{"bookName": book.BookName,
+		// 	"price":             book.Price,
+		// 	"author":            book.Author,
+		// 	"category":          book.Category,
+		// 	"publishingCompany": book.PublishingCompany,
+		// 	"publicationDate":   book.PublicationDate,
+		// 	"description":       book.Description,
+		// }
+		update := models.Book{
+			Id:                objId,
+			BookName:          book.BookName,
+			Price:             book.Price,
+			Author:            book.Author,
+			Category:          book.Category,
+			PublishingCompany: book.PublishingCompany,
+			PublicationDate:   book.PublicationDate,
+			Description:       book.Description,
+		}
+
 		result, err := bookCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})

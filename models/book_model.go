@@ -14,4 +14,5 @@ type Book struct {
 	Category          string             `json:"category" bson:"category"`
 	PublishingCompany string             `json:"publishingCompany" bson:"publishingCompany"`
 	PublicationDate   time.Time          `json:"publicationDate" bson:"publicationDate"`
+	Description       *string            `json:"description,omitempty" bson:"description,omitempty"`
 }
