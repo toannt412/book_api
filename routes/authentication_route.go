@@ -8,8 +8,10 @@ import (
 
 func AuthenticationRoute(router *gin.Engine) {
 
-	router.POST("/register", controllers.RegisterAccount())
-	router.POST("/login", controllers.LoginAccount())
+
+
 	router.GET("/logout", CheckToken(), controllers.LogoutAccount())
+	router.PUT("/auth/:accountId", controllers.EditAUserAccount())
+	router.GET("/auth/:accountId", controllers.GetInfoAUserAuth())
 
 }

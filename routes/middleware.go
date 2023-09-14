@@ -6,9 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -25,27 +23,26 @@ func CheckToken() gin.HandlerFunc {
 
 	}
 
-	verifyKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(requiredToken))
+	//verifyKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(requiredToken))
 	return func(c *gin.Context) {
 
 		//Read the token out of the response body
 		buf := new(bytes.Buffer)
 		io.Copy(buf, c.Request.Body)
 		c.Request.Body.Close()
-		tokenString := strings.TrimSpace(buf.String())
+		//tokenString := strings.TrimSpace(buf.String())
 
 		// Parse the token
-		_, err := jwt.ParseWithClaims(tokenString, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-			// since we only use the one private key to sign the tokens,
-			// we also only use its public counter part to verify
-			return verifyKey, nil
-		})
+		// _, err := jwt.ParseWithClaims(tokenString, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+		// 	// since we only use the one private key to sign the tokens,
+		// 	// we also only use its public counter part to verify
+		// 	return verifyKey, nil
+		// })
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "Token invalido"})
 			return
 		}
-		
-		
+
 		// token := c.Request.Header.Get("Authorization")
 		// if token != requiredToken {
 		// 	c.JSON(http.StatusBadRequest, gin.H{"message": "Token invalido"})
@@ -55,7 +52,6 @@ func CheckToken() gin.HandlerFunc {
 		// 	c.JSON(http.StatusBadRequest, gin.H{"message": "Token deve ser preenchido"})
 		// 	return
 		// }
-		
 
 		c.Next()
 

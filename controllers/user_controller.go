@@ -2,13 +2,17 @@ package controllers
 
 import (
 	"bookstore/configs"
+	"bookstore/helpers"
 	"bookstore/models"
 	"bookstore/responses"
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
+
 	//"github.com/go-playground/validator"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -39,10 +43,11 @@ func CreateUser() gin.HandlerFunc {
 		// }
 
 		newUser := models.User{
-			Id:       primitive.NewObjectID(),
-			Name:     user.Name,
-			Location: user.Location,
-			Title:    user.Title,
+			Id:          primitive.NewObjectID(),
+			FullName:    user.FullName,
+			Location:    user.Location,
+			DateOfBirth: user.DateOfBirth,
+			Phone:       user.Phone,
 		}
 
 		result, err := userCollection.InsertOne(ctx, newUser)
@@ -97,7 +102,13 @@ func EditAUser() gin.HandlerFunc {
 		//     return
 		// }
 
-		update := bson.M{"name": user.Name, "location": user.Location, "title": user.Title}
+		update := models.User{
+			Id:          objId,
+			FullName:    user.FullName,
+			Location:    user.Location,
+			DateOfBirth: user.DateOfBirth,
+			Phone:       user.Phone,
+		}
 		result, err := userCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -178,3 +189,98 @@ func GetAllUsers() gin.HandlerFunc {
 	}
 }
 
+// Register
+func RegisterAccount() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		username := c.PostForm("username")
+		password := c.PostForm("password")
+		email := c.PostForm("email")
+
+		if username == "" || password == "" || email == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "missing username, password or email"})
+			return
+		}
+
+		if govalidator.IsNull(username) || govalidator.IsNull(email) || govalidator.IsNull(password) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "User name can not empty"})
+			return
+		}
+
+		if !govalidator.IsEmail(email) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Email is invalid"})
+			return
+		}
+
+		username = helpers.Santize(username)
+		password = helpers.Santize(password)
+		email = helpers.Santize(email)
+
+		var find bson.M
+		errFindUsername := userCollection.FindOne(context.TODO(), bson.M{"username": username}).Decode(&find)
+		errFindEmail := userCollection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&find)
+
+		if errFindEmail == nil || errFindUsername == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Account already exists"})
+			return
+		}
+
+		password, err := helpers.Hash(password)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		newAccount := bson.M{
+			"username": username,
+			"password": password,
+			"email":    email,
+		}
+
+		result, err := userCollection.InsertOne(context.TODO(), newAccount)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+
+		}
+		c.JSON(http.StatusCreated, responses.UserResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+	}
+}
+
+// Login
+func LoginAccount() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		username := c.PostForm("username")
+		password := c.PostForm("password")
+
+		if govalidator.IsNull(username) || govalidator.IsNull(password) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Username or password is empty"})
+			return
+		}
+
+		username = helpers.Santize(username)
+		password = helpers.Santize(password)
+
+		var find bson.M
+		err := userCollection.FindOne(context.TODO(), bson.M{"username": username}).Decode(&find)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Username or password is incorrect"})
+			return
+		}
+
+		//Convert interface to string
+		hashedPassword := fmt.Sprintf("%v", find["password"])
+		err = helpers.CheckPasswordHash(hashedPassword, password)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Username or password is incorrect"})
+			return
+		}
+
+		token, errCreate := helpers.CreateJWT(username)
+		if errCreate != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": errCreate.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "success", "data": token})
+
+	}
+}

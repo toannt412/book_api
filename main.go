@@ -19,7 +19,6 @@ func main() {
 	//routes
 	routes.UserRoute(router)
 	routes.BookRoute(router)
-	routes.AuthenticationRoute(router)
 	// router.GET("/", func(ctx *gin.Context) {
 	// 	ctx.JSON(http.StatusOK, gin.H{
 	// 		"data": "Hello from Gin-gonic & MongoDB",
