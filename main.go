@@ -19,6 +19,8 @@ func main() {
 	//routes
 	routes.UserRoute(router)
 	routes.BookRoute(router)
+	routes.CategoryRoute(router)
+	routes.AuthorRoute(router)
 	// router.GET("/", func(ctx *gin.Context) {
 	// 	ctx.JSON(http.StatusOK, gin.H{
 	// 		"data": "Hello from Gin-gonic & MongoDB",

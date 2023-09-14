@@ -39,11 +39,11 @@ func CreateBook() gin.HandlerFunc {
 			Id:                primitive.NewObjectID(),
 			BookName:          book.BookName,
 			Price:             book.Price,
-			Author:            book.Author,
-			Category:          book.Category,
 			PublishingCompany: book.PublishingCompany,
 			PublicationDate:   book.PublicationDate,
 			Description:       book.Description,
+			CategoryIDs:       book.CategoryIDs,
+			AuthorID:          book.AuthorID,
 		}
 
 		result, err := bookCollection.InsertOne(ctx, newBook)
@@ -103,11 +103,11 @@ func EditABook() gin.HandlerFunc {
 			Id:                objId,
 			BookName:          book.BookName,
 			Price:             book.Price,
-			Author:            book.Author,
-			Category:          book.Category,
 			PublishingCompany: book.PublishingCompany,
 			PublicationDate:   book.PublicationDate,
 			Description:       book.Description,
+			CategoryIDs:       book.CategoryIDs,
+			AuthorID:          book.AuthorID,
 		}
 
 		result, err := bookCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
@@ -190,3 +190,8 @@ func GetAllBooks() gin.HandlerFunc {
 		)
 	}
 }
+
+// func ConvertStringToObjectId(data struct, str string){
+// 	s := string()
+// 	return json.Unmarshal([]byte(str), &data)
+// }
