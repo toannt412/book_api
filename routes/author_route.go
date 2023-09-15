@@ -7,7 +7,7 @@ import (
 )
 
 func AuthorRoute(router *gin.Engine) {
-	
+
 	router.POST("/author", controllers.CreateAuthor())
 	router.GET("/authors", controllers.GetAllAuthors())
 	router.PUT("/author/:authorId", controllers.EditAAuthor())

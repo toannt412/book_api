@@ -25,7 +25,7 @@ func CreateCategory() gin.HandlerFunc {
 
 		//validate the request body
 		if err := c.BindJSON(&category); err != nil {
-			c.JSON(http.StatusBadRequest, responses.BookResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusBadRequest, responses.CategoryResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 		// TIM HIEU NAY LAI
@@ -42,11 +42,11 @@ func CreateCategory() gin.HandlerFunc {
 
 		result, err := categoriesCollection.InsertOne(ctx, newCategory)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.CategoryResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusCreated, responses.BookResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+		c.JSON(http.StatusCreated, responses.CategoryResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
 	}
 }
 
@@ -61,7 +61,7 @@ func GetAllCategories() gin.HandlerFunc {
 		results, err := categoriesCollection.Find(ctx, bson.M{})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.CategoryResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
@@ -70,14 +70,14 @@ func GetAllCategories() gin.HandlerFunc {
 		for results.Next(ctx) {
 			var singleCategory models.Category
 			if err = results.Decode(&singleCategory); err != nil {
-				c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+				c.JSON(http.StatusInternalServerError, responses.CategoryResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			}
 
 			categories = append(categories, singleCategory)
 		}
 
 		c.JSON(http.StatusOK,
-			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": categories}},
+			responses.CategoryResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": categories}},
 		)
 	}
 }
@@ -92,7 +92,7 @@ func EditACategory() gin.HandlerFunc {
 		objId, _ := primitive.ObjectIDFromHex(categoryId)
 
 		if err := c.BindJSON(&category); err != nil {
-			c.JSON(http.StatusBadRequest, responses.BookResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusBadRequest, responses.CategoryResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
@@ -103,7 +103,7 @@ func EditACategory() gin.HandlerFunc {
 
 		result, err := categoriesCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.CategoryResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
@@ -112,13 +112,13 @@ func EditACategory() gin.HandlerFunc {
 		if result.MatchedCount == 1 {
 			err := categoriesCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedCategory)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+				c.JSON(http.StatusInternalServerError, responses.CategoryResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 				return
 			}
 
 		}
 
-		c.JSON(http.StatusOK, responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedCategory}})
+		c.JSON(http.StatusOK, responses.CategoryResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedCategory}})
 
 	}
 }
@@ -134,19 +134,19 @@ func DeleteACategory() gin.HandlerFunc {
 
 		result, err := categoriesCollection.DeleteOne(ctx, bson.M{"_id": objId})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.CategoryResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
 		if result.DeletedCount < 1 {
 			c.JSON(http.StatusNotFound,
-				responses.BookResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "Category with specified ID not found!"}},
+				responses.CategoryResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "Category with specified ID not found!"}},
 			)
 			return
 		}
 
 		c.JSON(http.StatusOK,
-			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Category successfully deleted!"}},
+			responses.CategoryResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Category successfully deleted!"}},
 		)
 	}
 }

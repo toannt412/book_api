@@ -24,7 +24,7 @@ func CreateAuthor() gin.HandlerFunc {
 
 		//validate the request body
 		if err := c.BindJSON(&author); err != nil {
-			c.JSON(http.StatusBadRequest, responses.BookResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusBadRequest, responses.AuthorResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 		// TIM HIEU NAY LAI
@@ -44,11 +44,11 @@ func CreateAuthor() gin.HandlerFunc {
 
 		result, err := authorsCollection.InsertOne(ctx, newAuthor)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusCreated, responses.BookResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+		c.JSON(http.StatusCreated, responses.AuthorResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
 	}
 }
 
@@ -63,7 +63,7 @@ func GetAllAuthors() gin.HandlerFunc {
 		results, err := authorsCollection.Find(ctx, bson.M{})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
@@ -72,14 +72,14 @@ func GetAllAuthors() gin.HandlerFunc {
 		for results.Next(ctx) {
 			var singleAthor models.Author
 			if err = results.Decode(&singleAthor); err != nil {
-				c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+				c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			}
 
 			authors = append(authors, singleAthor)
 		}
 
 		c.JSON(http.StatusOK,
-			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": authors}},
+			responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": authors}},
 		)
 	}
 }
@@ -94,7 +94,7 @@ func EditAAuthor() gin.HandlerFunc {
 		objId, _ := primitive.ObjectIDFromHex(authorId)
 
 		if err := c.BindJSON(&author); err != nil {
-			c.JSON(http.StatusBadRequest, responses.BookResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusBadRequest, responses.AuthorResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
@@ -108,7 +108,7 @@ func EditAAuthor() gin.HandlerFunc {
 
 		result, err := authorsCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
@@ -117,13 +117,13 @@ func EditAAuthor() gin.HandlerFunc {
 		if result.MatchedCount == 1 {
 			err := authorsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedAuthor)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+				c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 				return
 			}
 
 		}
 
-		c.JSON(http.StatusOK, responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedAuthor}})
+		c.JSON(http.StatusOK, responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedAuthor}})
 
 	}
 }
@@ -139,19 +139,19 @@ func DeleteAAuthor() gin.HandlerFunc {
 
 		result, err := authorsCollection.DeleteOne(ctx, bson.M{"_id": objId})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
 		if result.DeletedCount < 1 {
 			c.JSON(http.StatusNotFound,
-				responses.BookResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "Author with specified ID not found!"}},
+				responses.AuthorResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "Author with specified ID not found!"}},
 			)
 			return
 		}
 
 		c.JSON(http.StatusOK,
-			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Author successfully deleted!"}},
+			responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Author successfully deleted!"}},
 		)
 	}
 }
@@ -167,10 +167,10 @@ func GetAAuthor() gin.HandlerFunc {
 
 		err := authorsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&author)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": author}})
+		c.JSON(http.StatusOK, responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": author}})
 	}
 }
