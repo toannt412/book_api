@@ -30,5 +30,5 @@ func main() {
 	// 	})
 	// })
 
-	router.Run()
+	router.Run(configs.EnvPort())
 }
