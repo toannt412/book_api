@@ -22,6 +22,8 @@ func main() {
 	routes.CategoryRoute(router)
 	routes.AuthorRoute(router)
 	routes.AdminRoute(router)
+	routes.OrderRoute(router)
+	routes.CartRoute(router)
 	// router.GET("/", func(ctx *gin.Context) {
 	// 	ctx.JSON(http.StatusOK, gin.H{
 	// 		"data": "Hello from Gin-gonic & MongoDB",

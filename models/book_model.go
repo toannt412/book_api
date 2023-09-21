@@ -9,7 +9,7 @@ import (
 type Book struct {
 	Id                primitive.ObjectID   `json:"id" bson:"_id"`
 	BookName          string               `json:"bookName" bson:"bookName,omitempty"`
-	Price             int                  `json:"price" bson:"price,omitempty"`
+	Price             float64              `json:"price" bson:"price,omitempty"`
 	PublishingCompany string               `json:"publishingCompany" bson:"publishingCompany,omitempty"`
 	PublicationDate   time.Time            `json:"publicationDate" bson:"publicationDate,omitempty"`
 	Description       string               `json:"description,omitempty" bson:"description,omitempty"`

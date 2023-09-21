@@ -19,7 +19,7 @@ var bookCollection *mongo.Collection = configs.GetCollection(configs.DB, "books"
 // Create
 func CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		var book models.Book
 		defer cancel()
 
