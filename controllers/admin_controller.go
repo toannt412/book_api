@@ -178,18 +178,18 @@ func CreateAdmin() gin.HandlerFunc {
 		email := c.PostForm("email")
 		role := c.PostForm("role")
 
-		if username == "" || password == "" || email == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing username, password or email"})
-			return
-		}
+		// if username == "" || password == "" || email == "" || role == "" {
+		// 	c.JSON(http.StatusBadRequest, responses.AdminResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Missing username, password, role or email"}})
+		// 	return
+		// } //gin.H{"error": "Missing username, password, role or email"
 
-		if govalidator.IsNull(username) || govalidator.IsNull(email) || govalidator.IsNull(password) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "User name can not empty"})
+		if govalidator.IsNull(username) || govalidator.IsNull(email) || govalidator.IsNull(password) || govalidator.IsNull(role) {
+			c.JSON(http.StatusBadRequest, responses.AdminResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Missing username, password, role or email"}})
 			return
 		}
 
 		if !govalidator.IsEmail(email) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Email is invalid"})
+			c.JSON(http.StatusBadRequest, responses.AdminResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Email is invalid"}})
 			return
 		}
 
@@ -202,7 +202,7 @@ func CreateAdmin() gin.HandlerFunc {
 		errFindEmail := adminsCollection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&find)
 
 		if errFindEmail == nil || errFindUsername == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Account already exists"})
+			c.JSON(http.StatusBadRequest, responses.AdminResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Account already exists"}})
 			return
 		}
 
