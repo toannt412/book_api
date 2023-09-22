@@ -12,6 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	//"go.mongodb.org/mongo-driver/x/mongo/driver/mongocrypt/options"
 )
 
 var authorsCollection *mongo.Collection = configs.GetCollection(configs.DB, "authors")
@@ -70,12 +72,12 @@ func GetAllAuthors() gin.HandlerFunc {
 		//reading from the db in an optimal way
 		defer results.Close(ctx)
 		for results.Next(ctx) {
-			var singleAthor models.Author
-			if err = results.Decode(&singleAthor); err != nil {
+			var singleAuthor models.Author
+			if err = results.Decode(&singleAuthor); err != nil {
 				c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			}
 
-			authors = append(authors, singleAthor)
+			authors = append(authors, singleAuthor)
 		}
 
 		c.JSON(http.StatusOK,
@@ -87,11 +89,12 @@ func GetAllAuthors() gin.HandlerFunc {
 // Update
 func EditAAuthor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		authorId := c.Param("authorId")
 		var author models.Author
 		defer cancel()
 		objId, _ := primitive.ObjectIDFromHex(authorId)
+		opts := options.FindOneAndUpdate().SetUpsert(false)
 
 		if err := c.BindJSON(&author); err != nil {
 			c.JSON(http.StatusBadRequest, responses.AuthorResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -106,7 +109,7 @@ func EditAAuthor() gin.HandlerFunc {
 			Alive:       author.Alive,
 		}
 
-		result, err := authorsCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
+		err := authorsCollection.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": update}, opts).Decode(&author)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -114,17 +117,13 @@ func EditAAuthor() gin.HandlerFunc {
 
 		//get updated book details
 		var updatedAuthor models.Author
-		if result.MatchedCount == 1 {
-			err := authorsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedAuthor)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-				return
-			}
+		if err := authorsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedAuthor); err != nil {
+
+			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
 
 		}
-
 		c.JSON(http.StatusOK, responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedAuthor}})
-
 	}
 }
 
