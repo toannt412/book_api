@@ -3,7 +3,7 @@ package controllers
 import (
 	"bookstore/configs"
 	"bookstore/helpers"
-	"bookstore/models"
+	"bookstore/dao/models"
 	"bookstore/responses"
 	"context"
 	"fmt"

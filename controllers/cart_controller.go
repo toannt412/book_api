@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"bookstore/configs"
-	"bookstore/models"
+	"bookstore/dao/models"
 	"bookstore/responses"
 	"context"
 	"net/http"
