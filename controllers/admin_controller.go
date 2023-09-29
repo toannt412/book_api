@@ -1,21 +1,16 @@
 package controllers
 
 import (
-	"bookstore/configs"
 	"bookstore/helpers"
 	"bookstore/responses"
 	"bookstore/service"
-	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var adminsCollection *mongo.Collection = configs.GetCollection(configs.DB, "admins")
+//var adminsCollection *mongo.Collection = configs.GetCollection(configs.DB, "admins")
 
 func LoginAccountAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -30,27 +25,12 @@ func LoginAccountAdmin() gin.HandlerFunc {
 		username = helpers.Santize(username)
 		password = helpers.Santize(password)
 
-		var find bson.M
-		err := adminsCollection.FindOne(context.TODO(), bson.M{"username": username}).Decode(&find)
+		res, err := service.Login(c, username, password)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "Username or password is incorrect"})
 			return
 		}
-
-		//Convert interface to string
-		hashedPassword := fmt.Sprintf("%v", find["password"])
-		err = helpers.CheckPasswordHash(hashedPassword, password)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "Username or password is incorrect"})
-			return
-		}
-
-		token, errCreate := helpers.CreateJWT(username)
-		if errCreate != nil {
-			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "Internal Server Error"})
-			return
-		}
-		c.JSON(http.StatusOK, responses.AdminResponse{Status: http.StatusOK, Message: "Create Token successfully", Data: map[string]interface{}{"token": token}})
+		c.JSON(http.StatusOK, responses.AdminResponse{Status: http.StatusOK, Message: "Login Success", Data: map[string]interface{}{"token": res}})
 
 	}
 }
@@ -69,44 +49,44 @@ func GetAdmin() gin.HandlerFunc {
 	}
 }
 
-// func EditAAdmin() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 		adminId := c.Param("adminId")
-// 		var admin models.Admin
-// 		defer cancel()
+func EditAAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		adminId := c.Param("adminId")
+		var admin models.Admin
+		defer cancel()
 
-// 		objId, _ := primitive.ObjectIDFromHex(adminId)
+		objId, _ := primitive.ObjectIDFromHex(adminId)
 
-// 		// Validate the request body
-// 		if err := c.BindJSON(&admin); err != nil {
-// 			c.JSON(http.StatusBadRequest, responses.AdminResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 			return
-// 		}
+		// Validate the request body
+		if err := c.BindJSON(&admin); err != nil {
+			c.JSON(http.StatusBadRequest, responses.AdminResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
 
-// 		update := models.Admin{
-// 			Id:       objId,
-// 			FullName: admin.FullName,
-// 			Phone:    admin.Phone,
-// 			Role:     admin.Role,
-// 		}
+		update := models.Admin{
+			Id:       objId,
+			FullName: admin.FullName,
+			Phone:    admin.Phone,
+			Role:     admin.Role,
+		}
 
-// 		_, err := adminsCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 			return
-// 		}
+		_, err := adminsCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
 
-// 		var updatedAdmin models.Admin
-// 		err = adminsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedAdmin)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 			return
-// 		}
+		var updatedAdmin models.Admin
+		err = adminsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedAdmin)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
 
-// 		c.JSON(http.StatusOK, responses.AdminResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedAdmin}})
-// 	}
-// }
+		c.JSON(http.StatusOK, responses.AdminResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedAdmin}})
+	}
+}
 
 // func DeleteAAdmin() gin.HandlerFunc {
 // 	return func(c *gin.Context) {
