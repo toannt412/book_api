@@ -9,7 +9,7 @@ import (
 )
 
 func Login(ctx context.Context, username, password string) (string, error) {
-	user, token, err := admin.LoginAccountAdmin(ctx, username, password)
+	user,token, err := admin.LoginAccountAdmin(ctx, username, password)
 	if err != nil {
 		return "Login Fail", err
 	}

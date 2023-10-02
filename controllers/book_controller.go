@@ -80,7 +80,7 @@ func GetABook() gin.HandlerFunc {
 // Update
 func EditABook() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		bookId := c.Param("bookId")
 		var book models.Book
 		defer cancel()
@@ -168,7 +168,6 @@ func GetAllBooks() gin.HandlerFunc {
 		defer cancel()
 
 		results, err := bookCollection.Find(ctx, bson.M{})
-
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
