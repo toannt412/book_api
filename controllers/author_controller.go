@@ -1,28 +1,18 @@
 package controllers
 
 import (
-	"bookstore/configs"
-	"bookstore/dao/models"
 	"bookstore/responses"
-	"context"
+	"bookstore/serialize"
+	service "bookstore/service/author"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	//"go.mongodb.org/mongo-driver/x/mongo/driver/mongocrypt/options"
 )
-
-var authorsCollection *mongo.Collection = configs.GetCollection(configs.DB, "authors")
 
 func CreateAuthor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		var author models.Author
-		defer cancel()
+		var author *serialize.Author
 
 		//validate the request body
 		if err := c.BindJSON(&author); err != nil {
@@ -36,7 +26,7 @@ func CreateAuthor() gin.HandlerFunc {
 		// 	return
 		// }
 
-		newAuthor := models.Author{
+		newAuthor := &serialize.Author{
 			Id:          primitive.NewObjectID(),
 			AuthorName:  author.AuthorName,
 			DateOfBirth: author.DateOfBirth,
@@ -44,13 +34,13 @@ func CreateAuthor() gin.HandlerFunc {
 			Alive:       author.Alive,
 		}
 
-		result, err := authorsCollection.InsertOne(ctx, newAuthor)
+		res, err := service.CreateAuthor(c, newAuthor)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusCreated, responses.AuthorResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+		c.JSON(http.StatusCreated, responses.AuthorResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }
 
@@ -58,118 +48,72 @@ func CreateAuthor() gin.HandlerFunc {
 // GET ALL
 func GetAllAuthors() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		var authors []models.Author
-		defer cancel()
-
-		results, err := authorsCollection.Find(ctx, bson.M{})
-
+		res, err := service.GetAllAuthors(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-
-		//reading from the db in an optimal way
-		defer results.Close(ctx)
-		for results.Next(ctx) {
-			var singleAuthor models.Author
-			if err = results.Decode(&singleAuthor); err != nil {
-				c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			}
-
-			authors = append(authors, singleAuthor)
-		}
-
 		c.JSON(http.StatusOK,
-			responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": authors}},
+			responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}},
 		)
 	}
 }
 
 // Update
-func EditAAuthor() gin.HandlerFunc {
+func EditAuthor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		authorId := c.Param("authorId")
-		var author models.Author
-		defer cancel()
-		objId, _ := primitive.ObjectIDFromHex(authorId)
-		opts := options.FindOneAndUpdate().SetUpsert(false)
+		ojbId, _ := primitive.ObjectIDFromHex(authorId)
+		var author *serialize.Author
 
 		if err := c.BindJSON(&author); err != nil {
 			c.JSON(http.StatusBadRequest, responses.AuthorResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		update := models.Author{
-			Id:          objId,
+		update := &serialize.Author{
+			Id:          ojbId,
 			AuthorName:  author.AuthorName,
 			DateOfBirth: author.DateOfBirth,
 			HomeTown:    author.HomeTown,
 			Alive:       author.Alive,
 		}
 
-		err := authorsCollection.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": update}, opts).Decode(&author)
+		res, err := service.EditAuthor(c, authorId, update)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusBadRequest, responses.AuthorResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-
-		//get updated book details
-		var updatedAuthor models.Author
-		if err := authorsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedAuthor); err != nil {
-
-			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
-
-		}
-		c.JSON(http.StatusOK, responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedAuthor}})
+		c.JSON(http.StatusOK, responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }
 
 // Delete
-func DeleteAAuthor() gin.HandlerFunc {
+func DeleteAuthor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		authorId := c.Param("authorId")
-		defer cancel()
 
-		objId, _ := primitive.ObjectIDFromHex(authorId)
-
-		result, err := authorsCollection.DeleteOne(ctx, bson.M{"_id": objId})
+		res, err := service.DeleteAuthor(c, authorId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-
-		if result.DeletedCount < 1 {
-			c.JSON(http.StatusNotFound,
-				responses.AuthorResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "Author with specified ID not found!"}},
-			)
-			return
-		}
-
 		c.JSON(http.StatusOK,
-			responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Author successfully deleted!"}},
+			responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}},
 		)
 	}
 }
 
-func GetAAuthor() gin.HandlerFunc {
+func GetAuthor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		authorId := c.Param("authorId")
-		var author models.Author
-		defer cancel()
 
-		objId, _ := primitive.ObjectIDFromHex(authorId)
-
-		err := authorsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&author)
+		res, err := service.GetAuthorByID(c, authorId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": author}})
+		c.JSON(http.StatusOK, responses.AuthorResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }

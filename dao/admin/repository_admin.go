@@ -103,7 +103,7 @@ func EditAdmin(ctx context.Context, id string, admin *serialize.Admin) (model.Ad
 
 	var updatedAdmin model.Admin
 	if result.MatchedCount == 1 {
-		err = adminsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedAdmin)
+		err := adminsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedAdmin)
 		if err != nil {
 			return model.Admin{}, err
 		}

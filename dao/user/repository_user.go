@@ -4,10 +4,12 @@ import (
 	"bookstore/configs"
 	"bookstore/dao/user/model"
 	"bookstore/helpers"
+	"bookstore/serialize"
 	"context"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -75,4 +77,90 @@ func LoginAccount(ctx context.Context, username, password string) (model.User, s
 
 	return user, token, nil
 
+}
+
+func DeleteUser(ctx context.Context, id string) (string, error) {
+	objId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return "Deleted fail", err
+	}
+
+	result, err := userCollection.DeleteOne(ctx, bson.M{"_id": objId})
+	if err != nil {
+		return "Deleted fail", err
+	}
+
+	if result.DeletedCount == 0 {
+		return "Deleted fail", mongo.ErrNoDocuments
+	}
+
+	return "Deleted successfully", nil
+}
+
+func EditUser(ctx context.Context, id string, sth *serialize.User) (model.User, error) {
+	objId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return model.User{}, err
+	}
+
+	// Validate the request body
+
+	update := model.User{
+		Id:          objId,
+		FullName:    sth.FullName,
+		Location:    sth.Location,
+		DateOfBirth: sth.DateOfBirth,
+		Phone:       sth.Phone,
+	}
+
+	result, err := userCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
+	if err != nil {
+		return model.User{}, err
+	}
+
+	var updatedUser model.User
+	if result.MatchedCount == 1 {
+		err = userCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedUser)
+		if err != nil {
+			return model.User{}, err
+		}
+	}
+
+	return model.User{
+		Id:          updatedUser.Id,
+		FullName:    updatedUser.FullName,
+		Location:    updatedUser.Location,
+		DateOfBirth: updatedUser.DateOfBirth,
+		Phone:       updatedUser.Phone,
+	}, nil
+}
+func GetUserByID(ctx context.Context, userId string) (model.User, error) {
+
+	var user model.User
+
+	objId, _ := primitive.ObjectIDFromHex(userId)
+
+	err := userCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&user)
+	if err != nil {
+		return model.User{}, err
+	}
+
+	return user, nil
+
+}
+func GetAllUsers(ctx context.Context) ([]model.User, error) {
+	var users []model.User
+	cursor, err := userCollection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(ctx) {
+		var user model.User
+		if err := cursor.Decode(&user); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }

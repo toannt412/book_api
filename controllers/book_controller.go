@@ -1,28 +1,20 @@
 package controllers
 
 import (
-	"bookstore/configs"
-	"bookstore/dao/models"
+	"bookstore/dao/book/model"
 	"bookstore/responses"
-	"context"
+	"bookstore/serialize"
+	service "bookstore/service/book"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
-
-var bookCollection *mongo.Collection = configs.GetCollection(configs.DB, "books")
 
 // Create
 func CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		var book models.Book
-		defer cancel()
-
+		var book model.Book
 		//validate the request body
 		if err := c.BindJSON(&book); err != nil {
 			c.JSON(http.StatusBadRequest, responses.BookResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -35,7 +27,7 @@ func CreateBook() gin.HandlerFunc {
 		// 	return
 		// }
 
-		newBook := models.Book{
+		newBook := model.Book{
 			Id:                primitive.NewObjectID(),
 			BookName:          book.BookName,
 			Price:             book.Price,
@@ -46,61 +38,44 @@ func CreateBook() gin.HandlerFunc {
 			AuthorID:          book.AuthorID,
 		}
 
-		result, err := bookCollection.InsertOne(ctx, newBook)
+		res, err := service.CreateBook(c, newBook)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusCreated, responses.BookResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+		c.JSON(http.StatusCreated, responses.BookResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }
 
 // Read
 // GET BY ID
-func GetABook() gin.HandlerFunc {
+func GetBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		bookId := c.Param("bookId")
-		var book models.Book
-		defer cancel()
 
-		objId, _ := primitive.ObjectIDFromHex(bookId)
-
-		err := bookCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&book)
+		res, err := service.GetBookByID(c, bookId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": book}})
+		c.JSON(http.StatusOK, responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }
 
 // Update
-func EditABook() gin.HandlerFunc {
+func EditBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		bookId := c.Param("bookId")
-		var book models.Book
-		defer cancel()
-		objId, _ := primitive.ObjectIDFromHex(bookId)
+		var book *serialize.Book
 
 		if err := c.BindJSON(&book); err != nil {
 			c.JSON(http.StatusBadRequest, responses.BookResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		// update := bson.M{"bookName": book.BookName,
-		// 	"price":             book.Price,
-		// 	"author":            book.Author,
-		// 	"category":          book.Category,
-		// 	"publishingCompany": book.PublishingCompany,
-		// 	"publicationDate":   book.PublicationDate,
-		// 	"description":       book.Description,
-		// }
-		update := models.Book{
-			Id:                objId,
+		update := &serialize.Book{
 			BookName:          book.BookName,
 			Price:             book.Price,
 			PublishingCompany: book.PublishingCompany,
@@ -109,53 +84,31 @@ func EditABook() gin.HandlerFunc {
 			CategoryIDs:       book.CategoryIDs,
 			AuthorID:          book.AuthorID,
 		}
-
-		result, err := bookCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
+		res, err := service.EditBook(c, bookId, update)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		//get updated book details
-		var updatedBook models.Book
-		if result.MatchedCount == 1 {
-			err := bookCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedBook)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-				return
-			}
-
-		}
-
-		c.JSON(http.StatusOK, responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedBook}})
+		c.JSON(http.StatusOK, responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
 
 	}
 }
 
 // Delete
-func DeleteABook() gin.HandlerFunc {
+func DeleteBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
 		bookId := c.Param("bookId")
-		defer cancel()
 
-		objId, _ := primitive.ObjectIDFromHex(bookId)
-
-		result, err := bookCollection.DeleteOne(ctx, bson.M{"_id": objId})
+		res, err := service.DeleteBook(c, bookId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
-		}
 
-		if result.DeletedCount < 1 {
-			c.JSON(http.StatusNotFound,
-				responses.BookResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "Book with specified ID not found!"}},
-			)
-			return
 		}
-
 		c.JSON(http.StatusOK,
-			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Book successfully deleted!"}},
+			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}},
 		)
 	}
 }
@@ -163,34 +116,14 @@ func DeleteABook() gin.HandlerFunc {
 // GET ALL
 func GetAllBooks() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		var books []models.Book
-		defer cancel()
 
-		results, err := bookCollection.Find(ctx, bson.M{})
+		res, err := service.GetAllBooks(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-
-		//reading from the db in an optimal way
-		defer results.Close(ctx)
-		for results.Next(ctx) {
-			var singleBook models.Book
-			if err = results.Decode(&singleBook); err != nil {
-				c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			}
-
-			books = append(books, singleBook)
-		}
-
 		c.JSON(http.StatusOK,
-			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": books}},
+			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}},
 		)
 	}
 }
-
-// func ConvertStringToObjectId(data struct, str string){
-// 	s := string()
-// 	return json.Unmarshal([]byte(str), &data)
-// }

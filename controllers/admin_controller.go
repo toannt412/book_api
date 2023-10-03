@@ -97,24 +97,6 @@ func GetAllAdmins() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		// var admins []models.Admin
-
-		// cursor, err := adminsCollection.Find(ctx, bson.M{})
-		// if err != nil {
-		// 	c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-		// 	return
-		// }
-		// defer cursor.Close(ctx)
-
-		// for cursor.Next(ctx) {
-		// 	var admin models.Admin
-		// 	if err := cursor.Decode(&admin); err != nil {
-		// 		c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-		// 		return
-		// 	}
-		// 	admins = append(admins, admin)
-		// }
-
 		c.JSON(http.StatusOK, responses.AdminResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": admins}})
 	}
 }

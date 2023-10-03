@@ -3,18 +3,13 @@ package controllers
 import (
 	"bookstore/helpers"
 	"bookstore/responses"
+	"bookstore/serialize"
 	service "bookstore/service/user"
 	"net/http"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 )
-
-//"github.com/go-playground/validator"
-
-//var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
-
-//var validate = validator.New()
 
 // CREATE
 // func CreateUser() gin.HandlerFunc {
@@ -53,134 +48,74 @@ import (
 // 	}
 // }
 
-// // READ
-// // GET BY ID
-// func GetAUser() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 		userId := c.Param("userId")
-// 		var user models.User
-// 		defer cancel()
-
-// 		objId, _ := primitive.ObjectIDFromHex(userId)
-
-// 		err := userCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&user)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 			return
-// 		}
-
-// 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user}})
-// 	}
-// }
+// READ
+// GET BY ID
+func GetUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId := c.Param("userId")
+		res, err := service.GetUserByID(c, userId)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
+	}
+}
 
 // UPDATE
-// func EditAUser() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 		userId := c.Param("userId")
-// 		var user models.User
-// 		defer cancel()
-// 		objId, _ := primitive.ObjectIDFromHex(userId)
+func EditUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId := c.Param("userId")
+		var user *serialize.User
 
-// 		//validate the request body
-// 		if err := c.BindJSON(&user); err != nil {
-// 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 			return
-// 		}
+		if err := c.BindJSON(&user); err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		update := &serialize.User{
+			FullName:    user.FullName,
+			Location:    user.Location,
+			DateOfBirth: user.DateOfBirth,
+			Phone:       user.Phone,
+		}
+		res, err := service.EditUser(c, userId, update)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
+	}
+}
 
-// 		// //use the validator library to validate required fields
-// 		// if validationErr := validate.Struct(&user); validationErr != nil {
-// 		//     c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": validationErr.Error()}})
-// 		//     return
-// 		// }
+// DELETE
+func DeleteUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId := c.Param("userId")
 
-// 		update := models.User{
-// 			Id:          objId,
-// 			FullName:    user.FullName,
-// 			Location:    user.Location,
-// 			DateOfBirth: user.DateOfBirth,
-// 			Phone:       user.Phone,
-// 		}
-// 		result, err := userCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 			return
-// 		}
+		res, err := service.DeleteUser(c, userId)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK,
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}},
+		)
+	}
+}
 
-// 		//get updated user details
-// 		var updatedUser models.User
-// 		if result.MatchedCount == 1 {
-// 			err := userCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedUser)
-// 			if err != nil {
-// 				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 				return
-// 			}
-
-// 		}
-
-// 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedUser}})
-// 	}
-// }
-
-// // DELETE
-// func DeleteAUser() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 		userId := c.Param("userId")
-// 		defer cancel()
-
-// 		objId, _ := primitive.ObjectIDFromHex(userId)
-
-// 		result, err := userCollection.DeleteOne(ctx, bson.M{"_id": objId})
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 			return
-// 		}
-
-// 		if result.DeletedCount < 1 {
-// 			c.JSON(http.StatusNotFound,
-// 				responses.UserResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "User with specified ID not found!"}},
-// 			)
-// 			return
-// 		}
-
-// 		c.JSON(http.StatusOK,
-// 			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully deleted!"}},
-// 		)
-// 	}
-// }
-
-// // GET ALL
-// func GetAllUsers() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 		var users []models.User
-// 		defer cancel()
-
-// 		results, err := userCollection.Find(ctx, bson.M{})
-
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 			return
-// 		}
-
-// 		//reading from the db in an optimal way
-// 		defer results.Close(ctx)
-// 		for results.Next(ctx) {
-// 			var singleUser models.User
-// 			if err = results.Decode(&singleUser); err != nil {
-// 				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 			}
-
-// 			users = append(users, singleUser)
-// 		}
-
-// 		c.JSON(http.StatusOK,
-// 			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": users}},
-// 		)
-// 	}
-// }
+// GET ALL
+func GetAllUsers() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		users, err := service.GetAllUsers(c)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK,
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": users}},
+		)
+	}
+}
 
 // // Register
 func RegisterAccount() gin.HandlerFunc {
