@@ -25,10 +25,10 @@ func CreateOrder(cxt context.Context, newOrder *serialize.Order) (*serialize.Ord
 		Id:            result.Id,
 		UserID:        result.UserID,
 		Books:         books,
+		CartID:        result.CartID,
 		TotalQuantity: result.TotalQuantity,
 		TotalPrice:    result.TotalPrice,
 		TotalAmount:   result.TotalAmount,
 		Status:        result.Status,
-		// CartID:        result.CartID,
 	}, nil
 }

@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var authorsCollection *mongo.Collection = configs.GetCollection(configs.DB, "authors")
@@ -78,16 +77,25 @@ func EditAuthor(ctx context.Context, authorID string, author *serialize.Author) 
 	if err != nil {
 		return model.Author{}, err
 	}
-	opts := options.FindOneAndUpdate().SetUpsert(true)
+	// opts := options.FindOneAndUpdate().SetUpsert(true)
 
-	er := authorsCollection.FindOneAndUpdate(ctx, bson.M{"_id": objID}, bson.M{"$set": author}, opts).Decode(&author)
-	if er != nil {
-		return model.Author{}, er
+	// er := authorsCollection.FindOneAndUpdate(ctx, bson.M{"_id": objID}, bson.M{"$set": author}, opts).Decode(&author)
+	// if er != nil {
+	// 	return model.Author{}, er
+	// }
+	result, err := authorsCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": author})
+	if err != nil {
+		return model.Author{}, err
 	}
+	if result.MatchedCount == 0 {
+		return model.Author{}, mongo.ErrNoDocuments
+	}
+
 	var updatedAuthor model.Author
 	if err := authorsCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&updatedAuthor); err != nil {
 		return model.Author{}, err
 	}
+
 	return model.Author{
 		Id:          updatedAuthor.Id,
 		AuthorName:  updatedAuthor.AuthorName,

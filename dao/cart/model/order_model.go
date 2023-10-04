@@ -10,7 +10,7 @@ type Order struct {
 	Id            primitive.ObjectID `json:"id" bson:"_id"`
 	UserID        primitive.ObjectID `json:"userID" bson:"userID"`
 	Books         []OrderBook        `json:"books" bson:"books"`
-	CartID        []Cart             `json:"cartID" bson:"cartID"`
+	CartID        primitive.ObjectID `json:"cartID" bson:"cartID"`
 	TotalQuantity int                `json:"totalQuantity" bson:"totalQuantity"`
 	TotalPrice    float64            `json:"totalPrice" bson:"totalPrice"`
 	TotalAmount   float64            `json:"totalAmount" bson:"totalAmount"`

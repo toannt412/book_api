@@ -16,7 +16,10 @@ func EditBook(ctx context.Context, bookID string, updateBook *serialize.Book) (*
 	for i, category := range result.CategoryIDs {
 		categoryIDs[i] = serialize.Category(category)
 	}
-	authorId := serialize.Author(result.AuthorID)
+	authorSlice := make([]serialize.Author, len(result.AuthorID))
+	for i, author := range result.AuthorID {
+		authorSlice[i] = serialize.Author(author)
+	}
 	return &serialize.Book{
 		Id:                result.Id,
 		BookName:          result.BookName,
@@ -25,6 +28,6 @@ func EditBook(ctx context.Context, bookID string, updateBook *serialize.Book) (*
 		PublicationDate:   result.PublicationDate,
 		Description:       result.Description,
 		CategoryIDs:       categoryIDs,
-		AuthorID:          authorId,
+		AuthorID:          authorSlice,
 	}, nil
 }

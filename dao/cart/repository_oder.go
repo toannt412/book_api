@@ -35,10 +35,10 @@ func CreateOrder(cxt context.Context, order *serialize.Order) (model.Order, erro
 		}
 	}
 	return model.Order{
-		Id:     order.Id,
-		UserID: order.UserID,
-		Books:  bookSlice,
-		//CartID:        order.CartID,
+		Id:            order.Id,
+		UserID:        order.UserID,
+		Books:         bookSlice,
+		CartID:        order.CartID,
 		TotalQuantity: order.TotalQuantity,
 		TotalPrice:    order.TotalPrice,
 		TotalAmount:   order.TotalAmount,
@@ -85,10 +85,10 @@ func EditOrder(cxt context.Context, orderID string, order *serialize.Order) (mod
 		Id:            updatedOrder.Id,
 		UserID:        updatedOrder.UserID,
 		Books:         updatedOrder.Books,
+		CartID:        updatedOrder.CartID,
 		TotalQuantity: updatedOrder.TotalQuantity,
 		TotalPrice:    updatedOrder.TotalPrice,
 		TotalAmount:   updatedOrder.TotalAmount,
 		Status:        updatedOrder.Status,
-		CartID:        updatedOrder.CartID,
 	}, nil
 }
