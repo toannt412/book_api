@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"bookstore/dao/book/model"
 	"bookstore/responses"
 	"bookstore/serialize"
 	service "bookstore/service/book"
@@ -14,7 +13,7 @@ import (
 // Create
 func CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var book model.Book
+		var book *serialize.Book
 		//validate the request body
 		if err := c.BindJSON(&book); err != nil {
 			c.JSON(http.StatusBadRequest, responses.BookResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -27,7 +26,7 @@ func CreateBook() gin.HandlerFunc {
 		// 	return
 		// }
 
-		newBook := model.Book{
+		newBook := &serialize.Book{
 			Id:                primitive.NewObjectID(),
 			BookName:          book.BookName,
 			Price:             book.Price,
@@ -118,7 +117,6 @@ func DeleteBook() gin.HandlerFunc {
 // GET ALL
 func GetAllBooks() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		res, err := service.GetAllBooks(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})

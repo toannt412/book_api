@@ -13,10 +13,35 @@ import (
 
 var booksCollection *mongo.Collection = configs.GetCollection(configs.DB, "books")
 
-func CreateBook(ctx context.Context, newBook model.Book) (model.Book, error) {
-	_, err := booksCollection.InsertOne(ctx, newBook)
+func CreateBook(ctx context.Context, newBook *serialize.Book) (model.Book, error) {
+	result, err := booksCollection.InsertOne(ctx, newBook)
 	if err != nil {
 		return model.Book{}, err
+	}
+	if result.InsertedID != nil {
+		err := booksCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&newBook)
+		if err != nil {
+			return model.Book{}, err
+		}
+	}
+
+	categories := make([]model.Category, len(newBook.CategoryIDs))
+	for i, cate := range newBook.CategoryIDs {
+		categories[i] = model.Category{
+			Id:      cate.Id,
+			CatName: cate.CatName,
+		}
+	}
+
+	authors := make([]model.Author, len(newBook.AuthorID))
+	for i, author := range newBook.AuthorID {
+		authors[i] = model.Author{
+			Id:          author.Id,
+			AuthorName:  author.AuthorName,
+			DateOfBirth: author.DateOfBirth,
+			HomeTown:    author.HomeTown,
+			Alive:       author.Alive,
+		}
 	}
 	return model.Book{
 		Id:                newBook.Id,
@@ -25,8 +50,8 @@ func CreateBook(ctx context.Context, newBook model.Book) (model.Book, error) {
 		PublishingCompany: newBook.PublishingCompany,
 		PublicationDate:   newBook.PublicationDate,
 		Description:       newBook.Description,
-		CategoryIDs:       newBook.CategoryIDs,
-		AuthorID:          newBook.AuthorID,
+		CategoryIDs:       categories,
+		AuthorID:          authors,
 	}, nil
 }
 
