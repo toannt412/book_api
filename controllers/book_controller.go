@@ -68,6 +68,7 @@ func GetBook() gin.HandlerFunc {
 func EditBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		bookId := c.Param("bookId")
+		objID, _ := primitive.ObjectIDFromHex(bookId)
 		var book *serialize.Book
 
 		if err := c.BindJSON(&book); err != nil {
@@ -76,6 +77,7 @@ func EditBook() gin.HandlerFunc {
 		}
 
 		update := &serialize.Book{
+			Id:                objID,
 			BookName:          book.BookName,
 			Price:             book.Price,
 			PublishingCompany: book.PublishingCompany,

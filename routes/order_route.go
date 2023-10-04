@@ -8,7 +8,7 @@ import (
 
 func OrderRoute(router *gin.Engine) {
 	router.POST("/order", controllers.CreateOrder())
-	router.GET("/order/:orderId", controllers.GetAOrder())
-	router.PUT("/order/:orderId", controllers.EditAOrder())
-	router.DELETE("/order/:orderId", controllers.DeleteAOrder())
+	router.GET("/order/:orderId", controllers.GetOrder())
+	router.PUT("/order/:orderId", controllers.EditOrder())
+	router.DELETE("/order/:orderId", controllers.DeleteOrder())
 }

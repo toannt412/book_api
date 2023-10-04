@@ -13,8 +13,8 @@ type Book struct {
 	PublishingCompany string             `json:"publishingCompany" bson:"publishingCompany,omitempty"`
 	PublicationDate   time.Time          `json:"publicationDate" bson:"publicationDate,omitempty"`
 	Description       string             `json:"description,omitempty" bson:"description,omitempty"`
-	CategoryIDs       []Category         `json:"categoryIds" bson:"categoryIds"`
-	AuthorID          Author             `json:"authorId" bson:"authorId"`
+	CategoryIDs       []Category         `json:"categoryIds" bson:"categoryIds,omitempty"`
+	AuthorID          Author             `json:"authorId" bson:"authorId,omitempty"`
 }
 
 type Category struct {
@@ -24,8 +24,8 @@ type Category struct {
 
 type Author struct {
 	Id          primitive.ObjectID `json:"id" bson:"_id"`
-	AuthorName  string             `json:"authorName" bson:"authorName,omitempty"`
-	DateOfBirth time.Time          `json:"dateOfBirth" bson:"dateOfBirth,omitempty"`
-	HomeTown    string             `json:"homeTown" bson:"homeTown,omitempty"`
-	Alive       bool               `json:"alive" bson:"alive,omitempty"`
+	AuthorName  string             `json:"authorName" bson:"authorName"`
+	DateOfBirth time.Time          `json:"dateOfBirth" bson:"dateOfBirth"`
+	HomeTown    string             `json:"homeTown" bson:"homeTown"`
+	Alive       bool               `json:"alive" bson:"alive"`
 }

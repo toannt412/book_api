@@ -1,26 +1,18 @@
 package controllers
 
 import (
-	"bookstore/configs"
-	"bookstore/dao/models"
 	"bookstore/responses"
-	"context"
+	"bookstore/serialize"
+	service "bookstore/service/cart"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
-
-var cartCollection *mongo.Collection = configs.GetCollection(configs.DB, "carts")
 
 func CreateCart() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		var cart models.Cart
-		defer cancel()
+		var cart *serialize.Cart
 
 		//validate the request body
 		if err := c.BindJSON(&cart); err != nil {
@@ -28,7 +20,7 @@ func CreateCart() gin.HandlerFunc {
 			return
 		}
 
-		newCart := models.Cart{
+		newCart := &serialize.Cart{
 			Id:            primitive.NewObjectID(),
 			UserID:        cart.UserID,
 			Books:         cart.Books,
@@ -36,60 +28,45 @@ func CreateCart() gin.HandlerFunc {
 			TotalAmount:   cart.TotalAmount,
 		}
 
-		result, err := cartCollection.InsertOne(ctx, newCart)
+		res, err := service.CreateCart(c, newCart)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CartResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		c.JSON(http.StatusCreated, responses.CartResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+		c.JSON(http.StatusCreated, responses.CartResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }
 
-func GetACart() gin.HandlerFunc {
+func GetCart() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		cartId := c.Param("cartId")
-		var cart models.Cart
-		defer cancel()
 
-		objId, _ := primitive.ObjectIDFromHex(cartId)
-
-		err := cartCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&cart)
+		res, err := service.GetCart(c, cartId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CartResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		c.JSON(http.StatusOK, responses.CartResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": cart}})
+		c.JSON(http.StatusOK, responses.CartResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }
 
-func DeleteACart() gin.HandlerFunc {
+func DeleteCart() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		cartId := c.Param("cartId")
-		defer cancel()
 
-		objId, _ := primitive.ObjectIDFromHex(cartId)
-
-		result, err := cartCollection.DeleteOne(ctx, bson.M{"_id": objId})
+		res, err := service.DeleteCart(c, cartId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CartResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-
-		if result.DeletedCount < 1 {
-			c.JSON(http.StatusNotFound, responses.CartResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "cart with specified ID not found!"}})
-		}
-		c.JSON(http.StatusOK, responses.CartResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Cart successfully deleted!"}})
+		c.JSON(http.StatusOK, responses.CartResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }
 
 func EditACart() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		cartId := c.Param("cartId")
-		var cart models.Cart
-		defer cancel()
+		var cart *serialize.Cart
 		objId, _ := primitive.ObjectIDFromHex(cartId)
 
 		//validate the request body
@@ -98,7 +75,7 @@ func EditACart() gin.HandlerFunc {
 			return
 		}
 
-		updatecart := models.Cart{
+		updatecart := &serialize.Cart{
 			Id:            objId,
 			UserID:        cart.UserID,
 			Books:         cart.Books,
@@ -106,20 +83,10 @@ func EditACart() gin.HandlerFunc {
 			TotalAmount:   cart.TotalAmount,
 		}
 
-		result, err := cartCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": updatecart})
+		res, err := service.EditCart(c, cartId, updatecart)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CartResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
 		}
-
-		var updatedcart models.Cart
-		if result.MatchedCount == 1 {
-			err := cartCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedcart)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, responses.CartResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-				return
-			}
-		}
-		c.JSON(http.StatusOK, responses.CartResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatecart}})
+		c.JSON(http.StatusOK, responses.CartResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }

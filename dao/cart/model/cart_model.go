@@ -1,6 +1,8 @@
-package models
+package model
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Cart struct {
 	Id            primitive.ObjectID `json:"id" bson:"_id"`

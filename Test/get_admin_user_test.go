@@ -1,4 +1,4 @@
-package service
+package test
 
 import (
 	"errors"
@@ -21,6 +21,7 @@ import (
 const (
 	IDRegex = "^[0-9a-fA-F]{24}$"
 )
+
 type ValidatorIDTestSuite struct {
 	suite.Suite
 }

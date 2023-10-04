@@ -1,26 +1,19 @@
 package controllers
 
 import (
-	"bookstore/configs"
-	"bookstore/dao/models"
 	"bookstore/responses"
-	"context"
+	"bookstore/serialize"
+	service "bookstore/service/order"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
-
-var orderCollection *mongo.Collection = configs.GetCollection(configs.DB, "orders")
 
 func CreateOrder() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		var order models.Order
-		defer cancel()
+		var order *serialize.Order
 
 		//validate the request body
 		if err := c.BindJSON(&order); err != nil {
@@ -28,7 +21,7 @@ func CreateOrder() gin.HandlerFunc {
 			return
 		}
 
-		newOrder := models.Order{
+		newOrder := &serialize.Order{
 			Id:            primitive.NewObjectID(),
 			UserID:        order.UserID,
 			Books:         order.Books,
@@ -40,60 +33,44 @@ func CreateOrder() gin.HandlerFunc {
 			OrderDate:     time.Now(),
 		}
 
-		result, err := orderCollection.InsertOne(ctx, newOrder)
+		res, err := service.CreateOrder(c, newOrder)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.OrderResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		c.JSON(http.StatusCreated, responses.OrderResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+		c.JSON(http.StatusCreated, responses.OrderResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }
 
-func GetAOrder() gin.HandlerFunc {
+func GetOrder() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		orderId := c.Param("orderId")
-		var order models.Order
-		defer cancel()
 
-		objId, _ := primitive.ObjectIDFromHex(orderId)
-
-		err := orderCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&order)
+		res, err := service.GetOrderByID(c, orderId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.OrderResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		c.JSON(http.StatusOK, responses.OrderResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": order}})
+		c.JSON(http.StatusOK, responses.OrderResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }
 
-func DeleteAOrder() gin.HandlerFunc {
+func DeleteOrder() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		orderId := c.Param("orderId")
-		defer cancel()
-
-		objId, _ := primitive.ObjectIDFromHex(orderId)
-
-		result, err := orderCollection.DeleteOne(ctx, bson.M{"_id": objId})
+		res, err := service.DeleteOrder(c, orderId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.OrderResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-
-		if result.DeletedCount < 1 {
-			c.JSON(http.StatusNotFound, responses.OrderResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "Order with specified ID not found!"}})
-		}
-		c.JSON(http.StatusOK, responses.OrderResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Order successfully deleted!"}})
+		c.JSON(http.StatusOK, responses.OrderResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }
 
-func EditAOrder() gin.HandlerFunc {
+func EditOrder() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		orderId := c.Param("orderId")
-		var order models.Order
-		defer cancel()
+		var order *serialize.Order
 		objId, _ := primitive.ObjectIDFromHex(orderId)
 
 		//validate the request body
@@ -102,7 +79,7 @@ func EditAOrder() gin.HandlerFunc {
 			return
 		}
 
-		updateOrder := models.Order{
+		updateOrder := &serialize.Order{
 			Id:            objId,
 			UserID:        order.UserID,
 			Books:         order.Books,
@@ -114,20 +91,11 @@ func EditAOrder() gin.HandlerFunc {
 			Status:        order.Status,
 		}
 
-		result, err := orderCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": updateOrder})
+		res, err := service.EditOrder(c, orderId, updateOrder)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.OrderResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-
-		var updatedOrder models.Order
-		if result.MatchedCount == 1 {
-			err := orderCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedOrder)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, responses.OrderResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-				return
-			}
-		}
-		c.JSON(http.StatusOK, responses.OrderResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updateOrder}})
+		c.JSON(http.StatusOK, responses.OrderResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
 	}
 }

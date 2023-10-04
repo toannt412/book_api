@@ -88,7 +88,7 @@ func EditBook(ctx context.Context, bookID string, book *serialize.Book) (model.B
 		}
 	}
 	return model.Book{
-		Id:                updatedBook.Id,
+		Id:                objID,
 		BookName:          updatedBook.BookName,
 		Price:             updatedBook.Price,
 		PublishingCompany: updatedBook.PublishingCompany,
