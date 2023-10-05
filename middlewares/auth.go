@@ -39,8 +39,9 @@ func Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
-			c.Next()
-			c.Redirect(302, "/admin/login")
+			c.JSON(401, gin.H{"error": "request does not contain an access token"})
+			c.Abort()
+			return
 		}
 		var find bson.M
 		checkToken := adminsCollection.FindOne(c, bson.M{"token": tokenString}).Decode(&find)
@@ -61,6 +62,6 @@ func Logout() gin.HandlerFunc {
 				return
 			}
 		}
-		c.Redirect(302, "/admin/login")
+		c.JSON(200, gin.H{"status": "logout success"})
 	}
 }
