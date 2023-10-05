@@ -13,12 +13,13 @@ func UserRoute(router *gin.Engine) {
 	{
 		api.POST("/token", controllers.GenerateToken)
 		api.POST("user/register", controllers.RegisterAccount())
+		api.POST("user/login", controllers.LoginAccount())
 		secured := api.Group("/secured").Use(middlewares.Auth())
 		{
 			secured.GET("/user/:userId", controllers.GetUser())
 			secured.PUT("/user/:userId", controllers.EditUser())
 			secured.DELETE("/user/:userId", controllers.DeleteUser())
-			secured.GET("/users", controllers.GetAllUsers())
+			//secured.GET("/users", controllers.GetAllUsers())
 		}
 	}
 	//router.POST("/user", controllers.CreateUser())

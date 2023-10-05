@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"bookstore/auth"
 	"bookstore/configs"
 	"bookstore/dao/admin/model"
 	"bookstore/helpers"
@@ -45,9 +46,14 @@ func LoginAccountAdmin(ctx context.Context, username, password string) (model.Ad
 		return model.Admin{}, "", err
 	}
 
-	token, errCreate := helpers.CreateJWT(username)
+	token, errCreate := auth.GenerateJWT(admin.Email, admin.UserName)
 	if errCreate != nil {
 		return model.Admin{}, "", err
+	}
+	adminID := find["_id"]
+	_, errAddToken := adminsCollection.UpdateOne(context.TODO(), bson.M{"_id": adminID}, bson.M{"$set": bson.M{"token": token}})
+	if errAddToken != nil {
+		return model.Admin{}, "", errAddToken
 	}
 
 	return admin, token, nil

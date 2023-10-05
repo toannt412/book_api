@@ -139,7 +139,7 @@ func RegisterAccount() gin.HandlerFunc {
 		email = helpers.Santize(email)
 
 		errFindUsername := service.GetUserByUserName(c, username)
-		errFindEmail := service.GetUserByEmail(c, email)
+		_, errFindEmail := service.GetUserByEmail(c, email)
 
 		if errFindEmail == nil || errFindUsername == nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Username or email already exists"}})

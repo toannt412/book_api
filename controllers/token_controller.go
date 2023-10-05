@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"bookstore/auth"
-	"bookstore/dao/user/model"
 	"bookstore/helpers"
 	service "bookstore/service/user"
 	"net/http"
@@ -17,26 +16,26 @@ type TokenRequest struct {
 
 func GenerateToken(c *gin.Context) {
 	var request TokenRequest
-	var user model.User
+	//var user model.User
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		c.Abort()
 		return
 	}
 	// check if email exists and password is correct
-	record := service.GetUserByEmail(c, request.Email)
-	if record != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": record.Error()})
+	record, err := service.GetUserByEmail(c, request.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		c.Abort()
 		return
 	}
-	credentialError := helpers.CheckPasswordHash(user.Password, request.Password)
+	credentialError := helpers.CheckPasswordHash(record.Password, request.Password)
 	if credentialError != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": credentialError.Error()})
 		c.Abort()
 		return
 	}
-	tokenString, err := auth.GenerateJWT(user.Email, user.Password)
+	tokenString, err := auth.GenerateJWT(record.Email, record.UserName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		c.Abort()

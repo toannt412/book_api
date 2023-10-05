@@ -52,3 +52,46 @@ func ValidateToken(signedToken string) (err error) {
 	}
 	return
 }
+
+func GetUsernameFromToken(signedToken string) (username string, err error) {
+	token, err := jwt.ParseWithClaims(
+		signedToken,
+		&JWTClaim{},
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(jwtKey), nil
+		},
+	)
+	if err != nil {
+		return
+	}
+	claims, ok := token.Claims.(*JWTClaim)
+	if !ok {
+		err = errors.New("could not parse claims")
+		return
+	}
+	return claims.Username, nil
+}
+
+func RemoveToken(signedToken string) (err error) {
+	token, err := jwt.ParseWithClaims(
+		signedToken,
+		&jwt.StandardClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte("your-secret-key"), nil // Thay "your-secret-key" bằng khóa bí mật thực tế của bạn
+		})
+	// token, err := jwt.ParseWithClaims(
+	// 	signedToken,
+	// 	&JWTClaim{},
+	// 	func(token *jwt.Token) (interface{}, error) {
+	// 		return []byte(jwtKey), nil
+	// 	},
+	// )
+	if err != nil {
+		return
+	}
+	if claims, ok := token.Claims.(*jwt.StandardClaims); ok && token.Valid {
+		claims.ExpiresAt = time.Now().Add(-1 * time.Hour).Unix()
+		return
+	}
+	return errors.New("token is expired")
+}

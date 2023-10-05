@@ -13,8 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-//var adminsCollection *mongo.Collection = configs.GetCollection(configs.DB, "admins")
-
 func LoginAccountAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.PostForm("username")

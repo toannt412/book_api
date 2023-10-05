@@ -2,15 +2,22 @@ package routes
 
 import (
 	"bookstore/controllers"
+	"bookstore/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
 
 func AdminRoute(router *gin.Engine) {
+
 	router.POST("/admin/login", controllers.LoginAccountAdmin())
-	router.GET("/admins", controllers.GetAllAdmins())
-	router.GET("/admin/:adminId", controllers.GetAdmin())
-	router.PUT("/admin/:adminId", controllers.EditAdmin())
-	router.DELETE("/admin/:adminId", controllers.DeleteAdmin())
-	router.POST("/admin", controllers.CreateAdmin())
+	auth := router.Group("/auth").Use(middlewares.Auth())
+	{
+		auth.GET("/admins", controllers.GetAllAdmins())
+		auth.GET("/admin/:adminId", controllers.GetAdmin())
+		auth.PUT("/admin/:adminId", controllers.EditAdmin())
+		auth.DELETE("/admin/:adminId", controllers.DeleteAdmin())
+		auth.POST("/admin", controllers.CreateAdmin())
+		auth.POST("/logout", middlewares.Logout())
+	}
+
 }

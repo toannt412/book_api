@@ -1,6 +1,7 @@
 package user
 
 import (
+	"bookstore/auth"
 	"bookstore/configs"
 	"bookstore/dao/user/model"
 	"bookstore/helpers"
@@ -70,8 +71,9 @@ func LoginAccount(ctx context.Context, username, password string) (model.User, s
 		return model.User{}, "", err
 	}
 
-	token, errCreate := helpers.CreateJWT(username)
-	if errCreate != nil {
+	//token, errCreate := helpers.CreateJWT(username)
+	token, err := auth.GenerateJWT(user.Email, user.UserName)
+	if err != nil {
 		return model.User{}, "", err
 	}
 

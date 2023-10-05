@@ -10,4 +10,5 @@ type Admin struct {
 	Password string             `json:"password,omitempty" bson:"password,omitempty"`
 	Email    string             `json:"email,omitempty" bson:"email,omitempty"`
 	Role     string             `json:"role,omitempty" bson:"role,omitempty"`
+	Token    string             `json:"token,omitempty" bson:"token,omitempty"`
 }

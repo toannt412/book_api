@@ -22,12 +22,12 @@ func GetUserByID(ctx context.Context, id string) (*serialize.User, error) {
 	}, nil
 }
 
-func GetUserByEmail(ctx context.Context, email string) error {
-	_, err := user.GetUserByEmail(ctx, email)
+func GetUserByEmail(ctx context.Context, email string) (model.User, error) {
+	user, err := user.GetUserByEmail(ctx, email)
 	if err != nil {
-		return err
+		return model.User{}, err
 	}
-	return nil
+	return user, nil
 }
 
 func GetUserByUserName(ctx context.Context, username string) error {
