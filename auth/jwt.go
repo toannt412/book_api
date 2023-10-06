@@ -17,7 +17,7 @@ type JWTClaim struct {
 }
 
 func GenerateJWT(email, username string) (tokenString string, err error) {
-	expirationTime := time.Now().Add(1 * time.Hour)
+	expirationTime := time.Now().Add(1 * time.Minute)
 	claims := &JWTClaim{
 		Email:    email,
 		Username: username,
@@ -69,9 +69,26 @@ func GetUsernameFromToken(signedToken string) (username string, err error) {
 		err = errors.New("could not parse claims")
 		return
 	}
+	if claims.ExpiresAt < time.Now().Local().Unix() {
+		err = errors.New("token is expired")
+		return
+	}
 	return claims.Username, nil
 }
 
+func CheckValidToken(signedToken string) (err error) {
+	_, err = jwt.ParseWithClaims(
+		signedToken,
+		&JWTClaim{},
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(jwtKey), nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func RemoveToken(signedToken string) (err error) {
 	token, err := jwt.ParseWithClaims(
 		signedToken,

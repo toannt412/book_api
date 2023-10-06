@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"bookstore/auth"
 	"bookstore/configs"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +24,12 @@ func AuthAdmin() gin.HandlerFunc {
 		err := adminsCollection.FindOne(c, bson.M{"token": tokenString})
 		if err.Err() != nil {
 			c.JSON(401, gin.H{"error": "token is invalid"})
+			c.Abort()
+			return
+		}
+		isValidToken := auth.CheckValidToken(tokenString)
+		if isValidToken != nil {
+			c.JSON(401, gin.H{"error": isValidToken})
 			c.Abort()
 			return
 		}
@@ -72,6 +79,12 @@ func AuthUser() gin.HandlerFunc {
 		err := userCollection.FindOne(c, bson.M{"token": tokenString})
 		if err.Err() != nil {
 			c.JSON(401, gin.H{"error": "token is invalid"})
+			c.Abort()
+			return
+		}
+		isValidToken := auth.CheckValidToken(tokenString)
+		if isValidToken != nil {
+			c.JSON(401, gin.H{"error": isValidToken.Error()})
 			c.Abort()
 			return
 		}
