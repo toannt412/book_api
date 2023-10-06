@@ -76,7 +76,11 @@ func LoginAccount(ctx context.Context, username, password string) (model.User, s
 	if err != nil {
 		return model.User{}, "", err
 	}
-
+	userID := find["_id"]
+	_, errAddToken := userCollection.UpdateOne(context.TODO(), bson.M{"_id": userID}, bson.M{"$set": bson.M{"token": token}})
+	if errAddToken != nil {
+		return model.User{}, "", errAddToken
+	}
 	return user, token, nil
 
 }
