@@ -20,7 +20,6 @@ func CreateOrder() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, responses.OrderResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-
 		newOrder := &serialize.Order{
 			Id:            primitive.NewObjectID(),
 			UserID:        order.UserID,

@@ -14,7 +14,7 @@ type Book struct {
 	PublicationDate   time.Time          `json:"publicationDate,omitempty" bson:"publicationDate,omitempty"`
 	Description       string             `json:"description,omitempty" bson:"description,omitempty"`
 	CategoryIDs       []Category         `json:"categoryIds" bson:"categoryIds,omitempty"`
-	AuthorID          []Author             `json:"authorId" bson:"authorId,omitempty"`
+	AuthorID          []Author           `json:"authorId" bson:"authorId,omitempty"`
 }
 
 type Category struct {

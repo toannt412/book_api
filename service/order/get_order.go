@@ -30,6 +30,7 @@ func GetOrderByID(cxt context.Context, orderID string) (*serialize.Order, error)
 		TotalPrice:    result.TotalPrice,
 		TotalAmount:   result.TotalAmount,
 		Status:        result.Status,
-		// CartID:        result.CartID,
+		OrderDate:     result.OrderDate,
+		CartID:        result.CartID,
 	}, nil
 }
