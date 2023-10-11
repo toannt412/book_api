@@ -1,14 +1,12 @@
 package routes
 
 import (
-	"bookstore/controllers"
-
 	"github.com/gin-gonic/gin"
 )
 
-func CartRoute(router *gin.Engine) {
-	router.POST("/cart", controllers.CreateCart())
-	router.GET("/cart/:cartId", controllers.GetCart())
-	router.PUT("/cart/:cartId", controllers.EditACart())
-	router.DELETE("/cart/:cartId", controllers.DeleteCart())
+func (r *Routes) CartRoute(router *gin.Engine) {
+	router.POST("/cart", r.cartRoutes.CreateCart())
+	router.GET("/cart/:cartId", r.cartRoutes.GetCart())
+	router.PUT("/cart/:cartId", r.cartRoutes.EditACart())
+	router.DELETE("/cart/:cartId", r.cartRoutes.DeleteCart())
 }

@@ -1,7 +1,7 @@
 package book
 
 import (
-	"bookstore/configs"
+	"bookstore/dao"
 	"bookstore/dao/book/model"
 	"bookstore/serialize"
 	"context"
@@ -11,15 +11,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var categoriesCollection *mongo.Collection = configs.GetCollection(configs.DB, "categories")
+type CategoryRepository struct {
+	categoriesCollection *mongo.Collection
+}
 
-func CreateCategory(ctx context.Context, newCategory *serialize.Category) (model.Category, error) {
-	result, err := categoriesCollection.InsertOne(ctx, newCategory)
+func NewCategoryRepository() *CategoryRepository {
+	var DB *mongo.Client = dao.ConnectDB()
+	return &CategoryRepository{
+		categoriesCollection: dao.GetCollection(DB, "categories"),
+	}
+}
+
+func (repo *CategoryRepository) CreateCategory(ctx context.Context, newCategory *serialize.Category) (model.Category, error) {
+	result, err := repo.categoriesCollection.InsertOne(ctx, newCategory)
 	if err != nil {
 		return model.Category{}, err
 	}
 	if result.InsertedID != nil {
-		err := categoriesCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&newCategory)
+		err := repo.categoriesCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&newCategory)
 		if err != nil {
 			return model.Category{}, err
 		}
@@ -30,19 +39,19 @@ func CreateCategory(ctx context.Context, newCategory *serialize.Category) (model
 	}, nil
 }
 
-func GetCategoryByID(ctx context.Context, categoryID string) (model.Category, error) {
+func (repo *CategoryRepository) GetCategoryByID(ctx context.Context, categoryID string) (model.Category, error) {
 	var category model.Category
 	objID, _ := primitive.ObjectIDFromHex(categoryID)
-	err := categoriesCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&category)
+	err := repo.categoriesCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&category)
 	if err != nil {
 		return model.Category{}, err
 	}
 	return category, err
 }
 
-func GetAllCategories(ctx context.Context) ([]model.Category, error) {
+func (repo *CategoryRepository) GetAllCategories(ctx context.Context) ([]model.Category, error) {
 	var categories []model.Category
-	cursor, err := categoriesCollection.Find(ctx, bson.M{})
+	cursor, err := repo.categoriesCollection.Find(ctx, bson.M{})
 	if err != nil {
 		return []model.Category{}, err
 	}
@@ -57,9 +66,9 @@ func GetAllCategories(ctx context.Context) ([]model.Category, error) {
 	return categories, nil
 }
 
-func DeleteCategory(ctx context.Context, categoryID string) (string, error) {
+func (repo *CategoryRepository) DeleteCategory(ctx context.Context, categoryID string) (string, error) {
 	objID, _ := primitive.ObjectIDFromHex(categoryID)
-	result, err := categoriesCollection.DeleteOne(ctx, bson.M{"_id": objID})
+	result, err := repo.categoriesCollection.DeleteOne(ctx, bson.M{"_id": objID})
 	if err != nil {
 		return "Deleted failed", err
 	}
@@ -69,13 +78,13 @@ func DeleteCategory(ctx context.Context, categoryID string) (string, error) {
 	return "Deleted successfully", err
 }
 
-func EditCategory(ctx context.Context, categoryID string, category *serialize.Category) (model.Category, error) {
+func (repo *CategoryRepository) EditCategory(ctx context.Context, categoryID string, category *serialize.Category) (model.Category, error) {
 	objID, err := primitive.ObjectIDFromHex(categoryID)
 	if err != nil {
 		return model.Category{}, err
 	}
 	update := bson.M{"_id": objID, "categoryname": category.CatName}
-	result, err := categoriesCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": update})
+	result, err := repo.categoriesCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": update})
 	if err != nil {
 		return model.Category{}, err
 	}
@@ -87,4 +96,3 @@ func EditCategory(ctx context.Context, categoryID string, category *serialize.Ca
 		CatName: category.CatName,
 	}, nil
 }
-

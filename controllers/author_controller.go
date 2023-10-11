@@ -10,7 +10,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func CreateAuthor() gin.HandlerFunc {
+type AuthorController struct {
+	authorSvc *service.AuthorService
+}
+
+func NewAuthorController() *AuthorController {
+	return &AuthorController{
+		authorSvc: service.NewAuthorService(),
+	}
+}
+func (ctrl *AuthorController) CreateAuthor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var author *serialize.Author
 
@@ -34,7 +43,7 @@ func CreateAuthor() gin.HandlerFunc {
 			Alive:       author.Alive,
 		}
 
-		res, err := service.CreateAuthor(c, newAuthor)
+		res, err := ctrl.authorSvc.CreateAuthor(c, newAuthor)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -46,9 +55,9 @@ func CreateAuthor() gin.HandlerFunc {
 
 // Read
 // GET ALL
-func GetAllAuthors() gin.HandlerFunc {
+func (ctrl *AuthorController) GetAllAuthors() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		res, err := service.GetAllAuthors(c)
+		res, err := ctrl.authorSvc.GetAllAuthors(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -60,7 +69,7 @@ func GetAllAuthors() gin.HandlerFunc {
 }
 
 // Update
-func EditAuthor() gin.HandlerFunc {
+func (ctrl *AuthorController) EditAuthor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authorId := c.Param("authorId")
 		ojbId, _ := primitive.ObjectIDFromHex(authorId)
@@ -79,7 +88,7 @@ func EditAuthor() gin.HandlerFunc {
 			Alive:       author.Alive,
 		}
 
-		res, err := service.EditAuthor(c, authorId, update)
+		res, err := ctrl.authorSvc.EditAuthor(c, authorId, update)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, responses.AuthorResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -89,11 +98,11 @@ func EditAuthor() gin.HandlerFunc {
 }
 
 // Delete
-func DeleteAuthor() gin.HandlerFunc {
+func (ctrl *AuthorController) DeleteAuthor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authorId := c.Param("authorId")
 
-		res, err := service.DeleteAuthor(c, authorId)
+		res, err := ctrl.authorSvc.DeleteAuthor(c, authorId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -104,11 +113,11 @@ func DeleteAuthor() gin.HandlerFunc {
 	}
 }
 
-func GetAuthor() gin.HandlerFunc {
+func (ctrl *AuthorController) GetAuthor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authorId := c.Param("authorId")
 
-		res, err := service.GetAuthorByID(c, authorId)
+		res, err := ctrl.authorSvc.GetAuthorByID(c, authorId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AuthorResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return

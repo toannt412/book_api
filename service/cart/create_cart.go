@@ -1,13 +1,12 @@
 package cart
 
 import (
-	"bookstore/dao/cart"
 	"bookstore/serialize"
 	"context"
 )
 
-func CreateCart(cxt context.Context, newCart *serialize.Cart) (*serialize.Cart, error){
-	result, err := cart.CreateCart(cxt, newCart)
+func (s *CartService) CreateCart(cxt context.Context, newCart *serialize.Cart) (*serialize.Cart, error) {
+	result, err := s.cartRepo.CreateCart(cxt, newCart)
 	if err != nil {
 		return nil, err
 	}
@@ -30,4 +29,3 @@ func CreateCart(cxt context.Context, newCart *serialize.Cart) (*serialize.Cart, 
 		TotalAmount:   result.TotalAmount,
 	}, nil
 }
-

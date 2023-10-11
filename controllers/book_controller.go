@@ -10,8 +10,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type BookController struct {
+	bookSvc *service.BookService
+}
+
+func NewBookController() *BookController {
+	return &BookController{
+		bookSvc: service.NewBookService(),
+	}
+}
+
 // Create
-func CreateBook() gin.HandlerFunc {
+func (ctrl *BookController) CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var book *serialize.Book
 		//validate the request body
@@ -37,7 +47,7 @@ func CreateBook() gin.HandlerFunc {
 			AuthorID:          book.AuthorID,
 		}
 
-		res, err := service.CreateBook(c, newBook)
+		res, err := ctrl.bookSvc.CreateBook(c, newBook)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -49,11 +59,11 @@ func CreateBook() gin.HandlerFunc {
 
 // Read
 // GET BY ID
-func GetBook() gin.HandlerFunc {
+func (ctrl *BookController) GetBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		bookId := c.Param("bookId")
 
-		res, err := service.GetBookByID(c, bookId)
+		res, err := ctrl.bookSvc.GetBookByID(c, bookId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -64,7 +74,7 @@ func GetBook() gin.HandlerFunc {
 }
 
 // Update
-func EditBook() gin.HandlerFunc {
+func (ctrl *BookController) EditBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		bookId := c.Param("bookId")
 		objID, _ := primitive.ObjectIDFromHex(bookId)
@@ -85,7 +95,7 @@ func EditBook() gin.HandlerFunc {
 			CategoryIDs:       book.CategoryIDs,
 			AuthorID:          book.AuthorID,
 		}
-		res, err := service.EditBook(c, bookId, update)
+		res, err := ctrl.bookSvc.EditBook(c, bookId, update)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -97,12 +107,12 @@ func EditBook() gin.HandlerFunc {
 }
 
 // Delete
-func DeleteBook() gin.HandlerFunc {
+func (ctrl *BookController) DeleteBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		bookId := c.Param("bookId")
 
-		res, err := service.DeleteBook(c, bookId)
+		res, err := ctrl.bookSvc.DeleteBook(c, bookId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -115,9 +125,9 @@ func DeleteBook() gin.HandlerFunc {
 }
 
 // GET ALL
-func GetAllBooks() gin.HandlerFunc {
+func (ctrl *BookController) GetAllBooks() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		res, err := service.GetAllBooks(c)
+		res, err := ctrl.bookSvc.GetAllBooks(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return

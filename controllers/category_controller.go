@@ -10,8 +10,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type CategoryController struct {
+	categorySvc *service.CategoryService
+}
+
+func NewCategoryController() *CategoryController {
+	return &CategoryController{
+		categorySvc: service.NewCategoryService(),
+	}
+}
+
 // Create
-func CreateCategory() gin.HandlerFunc {
+func (ctrl *CategoryController) CreateCategory() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var category *serialize.Category
 
@@ -26,7 +36,7 @@ func CreateCategory() gin.HandlerFunc {
 			CatName: category.CatName,
 		}
 
-		res, err := service.CreateCategory(c, newCategory)
+		res, err := ctrl.categorySvc.CreateCategory(c, newCategory)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CategoryResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -36,10 +46,10 @@ func CreateCategory() gin.HandlerFunc {
 	}
 }
 
-func GetCategoryByID() gin.HandlerFunc {
+func (ctrl *CategoryController) GetCategoryByID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		categoryID := c.Param("categoryId")
-		res, err := service.GetCategoryByID(c, categoryID)
+		res, err := ctrl.categorySvc.GetCategoryByID(c, categoryID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CategoryResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -52,9 +62,9 @@ func GetCategoryByID() gin.HandlerFunc {
 
 // Read
 // GET ALL
-func GetAllCategories() gin.HandlerFunc {
+func (ctrl *CategoryController) GetAllCategories() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		res, err := service.GetAllCategories(c)
+		res, err := ctrl.categorySvc.GetAllCategories(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CategoryResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -66,7 +76,7 @@ func GetAllCategories() gin.HandlerFunc {
 }
 
 // Update
-func EditCategory() gin.HandlerFunc {
+func (ctrl *CategoryController) EditCategory() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		categoryId := c.Param("categoryId")
 		var category *serialize.Category
@@ -79,7 +89,7 @@ func EditCategory() gin.HandlerFunc {
 		update := &serialize.Category{
 			CatName: category.CatName,
 		}
-		res, err := service.EditCategory(c, categoryId, update)
+		res, err := ctrl.categorySvc.EditCategory(c, categoryId, update)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, responses.CategoryResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -90,11 +100,11 @@ func EditCategory() gin.HandlerFunc {
 }
 
 // Delete
-func DeleteCategory() gin.HandlerFunc {
+func (ctrl *CategoryController) DeleteCategory() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		categoryId := c.Param("categoryId")
 
-		res, err := service.DeleteCategory(c, categoryId)
+		res, err := ctrl.categorySvc.DeleteCategory(c, categoryId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CategoryResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return

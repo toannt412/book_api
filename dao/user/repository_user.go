@@ -2,7 +2,7 @@ package user
 
 import (
 	"bookstore/auth"
-	"bookstore/configs"
+	"bookstore/dao"
 	"bookstore/dao/user/model"
 	"bookstore/helpers"
 	"bookstore/serialize"
@@ -14,12 +14,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
+type UserRepository struct {
+	usersCollection *mongo.Collection
+}
 
-func GetUserByUserName(ctx context.Context, username string) (model.User, error) {
+func NewUserRepository() *UserRepository {
+	var DB *mongo.Client = dao.ConnectDB()
+	return &UserRepository{
+		usersCollection: dao.GetCollection(DB, "users"),
+	}
+}
+
+func (repo *UserRepository) GetUserByUserName(ctx context.Context, username string) (model.User, error) {
 	var user model.User
 
-	err := userCollection.FindOne(ctx, bson.M{"username": username}).Decode(&user)
+	err := repo.usersCollection.FindOne(ctx, bson.M{"username": username}).Decode(&user)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -27,10 +36,10 @@ func GetUserByUserName(ctx context.Context, username string) (model.User, error)
 	return user, nil
 }
 
-func GetUserByEmail(ctx context.Context, email string) (model.User, error) {
+func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	var user model.User
 
-	err := userCollection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	err := repo.usersCollection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -38,16 +47,17 @@ func GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	return user, nil
 }
 
-func RegisterAccount(ctx context.Context, username, password, email string) (string, error) {
+func (repo *UserRepository) RegisterAccount(ctx context.Context, username, password, email, phone string) (string, error) {
 	hashedPassword, err := helpers.Hash(password)
 	if err != nil {
 		return "", err
 	}
 
-	_, error := userCollection.InsertOne(ctx, bson.M{
+	_, error := repo.usersCollection.InsertOne(ctx, bson.M{
 		"username": username,
 		"password": hashedPassword,
 		"email":    email,
+		"phone":    phone,
 	})
 	if error != nil {
 		return "", err
@@ -56,10 +66,10 @@ func RegisterAccount(ctx context.Context, username, password, email string) (str
 
 }
 
-func LoginAccount(ctx context.Context, username, password string) (model.User, string, error) {
+func (repo *UserRepository) LoginAccount(ctx context.Context, username, password string) (model.User, string, error) {
 	var user model.User
 	var find bson.M
-	err := userCollection.FindOne(context.TODO(), bson.M{"username": username}).Decode(&find)
+	err := repo.usersCollection.FindOne(context.TODO(), bson.M{"username": username}).Decode(&find)
 	if err != nil {
 		return model.User{}, "", err
 	}
@@ -77,7 +87,7 @@ func LoginAccount(ctx context.Context, username, password string) (model.User, s
 		return model.User{}, "", err
 	}
 	userID := find["_id"]
-	_, errAddToken := userCollection.UpdateOne(context.TODO(), bson.M{"_id": userID}, bson.M{"$set": bson.M{"token": token}})
+	_, errAddToken := repo.usersCollection.UpdateOne(context.TODO(), bson.M{"_id": userID}, bson.M{"$set": bson.M{"token": token}})
 	if errAddToken != nil {
 		return model.User{}, "", errAddToken
 	}
@@ -85,13 +95,13 @@ func LoginAccount(ctx context.Context, username, password string) (model.User, s
 
 }
 
-func DeleteUser(ctx context.Context, id string) (string, error) {
+func (repo *UserRepository) DeleteUser(ctx context.Context, id string) (string, error) {
 	objId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return "Deleted fail", err
 	}
 
-	result, err := userCollection.DeleteOne(ctx, bson.M{"_id": objId})
+	result, err := repo.usersCollection.DeleteOne(ctx, bson.M{"_id": objId})
 	if err != nil {
 		return "Deleted fail", err
 	}
@@ -103,7 +113,7 @@ func DeleteUser(ctx context.Context, id string) (string, error) {
 	return "Deleted successfully", nil
 }
 
-func EditUser(ctx context.Context, id string, sth *serialize.User) (model.User, error) {
+func (repo *UserRepository) EditUser(ctx context.Context, id string, sth *serialize.User) (model.User, error) {
 	objId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return model.User{}, err
@@ -119,14 +129,14 @@ func EditUser(ctx context.Context, id string, sth *serialize.User) (model.User, 
 		Phone:       sth.Phone,
 	}
 
-	result, err := userCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
+	result, err := repo.usersCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
 	if err != nil {
 		return model.User{}, err
 	}
 
 	var updatedUser model.User
 	if result.MatchedCount == 1 {
-		err = userCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedUser)
+		err = repo.usersCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedUser)
 		if err != nil {
 			return model.User{}, err
 		}
@@ -140,13 +150,13 @@ func EditUser(ctx context.Context, id string, sth *serialize.User) (model.User, 
 		Phone:       updatedUser.Phone,
 	}, nil
 }
-func GetUserByID(ctx context.Context, userId string) (model.User, error) {
+func (repo *UserRepository) GetUserByID(ctx context.Context, userId string) (model.User, error) {
 
 	var user model.User
 
 	objId, _ := primitive.ObjectIDFromHex(userId)
 
-	err := userCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&user)
+	err := repo.usersCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&user)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -154,9 +164,9 @@ func GetUserByID(ctx context.Context, userId string) (model.User, error) {
 	return user, nil
 
 }
-func GetAllUsers(ctx context.Context) ([]model.User, error) {
+func (repo *UserRepository) GetAllUsers(ctx context.Context) ([]model.User, error) {
 	var users []model.User
-	cursor, err := userCollection.Find(ctx, bson.M{})
+	cursor, err := repo.usersCollection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
@@ -169,4 +179,40 @@ func GetAllUsers(ctx context.Context) ([]model.User, error) {
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+func (repo *UserRepository) GetUserToken(ctx context.Context, token string) (model.User, error) {
+	var user model.User
+	err := repo.usersCollection.FindOne(ctx, bson.M{"token": token}).Decode(&user)
+	if err != nil {
+		return model.User{}, err
+	}
+	return user, nil
+}
+
+func (repo *UserRepository) EditUserToken(ctx context.Context, token string) error {
+	_, err := repo.usersCollection.UpdateOne(ctx, bson.M{"token": token}, bson.M{"$unset": bson.M{"token": ""}})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *UserRepository) GetUserByPhone(ctx context.Context, phone string) (model.User, error) {
+	var user model.User
+
+	err := repo.usersCollection.FindOne(ctx, bson.M{"phone": phone}).Decode(&user)
+	if err != nil {
+		return model.User{}, err
+	}
+
+	return user, nil
+}
+
+func (repo *UserRepository) ResetPassword(ctx context.Context, password string) (string, error) {
+	hashedPassword, err := helpers.Hash(password)
+	if err != nil {
+		return "", err
+	}
+	return hashedPassword, nil
 }

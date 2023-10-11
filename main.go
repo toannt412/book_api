@@ -9,26 +9,40 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Routes struct {
+	routes *routes.Routes
+}
+
+func NewRoutes(router *gin.Engine) *Routes {
+	return &Routes{
+		routes: routes.NewRoutes(router),
+	}
+}
 func main() {
-
+	configs.Load()
 	router := gin.Default()
-
 	//run database
-	configs.ConnectDB()
-
+	//dao.ConnectDB()
+	r := routes.NewRoutes(router)
 	//routes
-	routes.UserRoute(router)
-	routes.BookRoute(router)
-	routes.CategoryRoute(router)
-	routes.AuthorRoute(router)
-	routes.AdminRoute(router)
-	routes.OrderRoute(router)
-	routes.CartRoute(router)
+	// routes.UserRoute(router)
+	// routes.BookRoute(router)
+	// routes.CategoryRoute(router)
+	// routes.AuthorRoute(router)
+	r.AdminRoute(router)
+	r.AuthorRoute(router)
+	r.BookRoute(router)
+	r.CartRoute(router)
+	r.CategoryRoute(router)
+	r.OrderRoute(router)
+	r.UserRoute(router)
+	// routes.OrderRoute(router)
+	// routes.CartRoute(router)
+	//routes.NewRoutes(router)
 	// router.GET("/", func(ctx *gin.Context) {
 	// 	ctx.JSON(http.StatusOK, gin.H{
 	// 		"data": "Hello from Gin-gonic & MongoDB",
 	// 	})
 	// })
-
-	router.Run(configs.EnvPort())
+	router.Run(configs.Config.Port)
 }

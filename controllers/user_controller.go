@@ -11,6 +11,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type UserController struct {
+	userSvc *service.UserService
+}
+
+func NewUserController() *UserController {
+	return &UserController{
+		userSvc: service.NewUserService(),
+	}
+}
+
 // CREATE
 // func CreateUser() gin.HandlerFunc {
 // 	return func(c *gin.Context) {
@@ -50,10 +60,10 @@ import (
 
 // READ
 // GET BY ID
-func GetUser() gin.HandlerFunc {
+func (ctrl *UserController) GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userId := c.Param("userId")
-		res, err := service.GetUserByID(c, userId)
+		res, err := ctrl.userSvc.GetUserByID(c, userId)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -63,7 +73,7 @@ func GetUser() gin.HandlerFunc {
 }
 
 // UPDATE
-func EditUser() gin.HandlerFunc {
+func (ctrl *UserController) EditUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userId := c.Param("userId")
 		var user *serialize.User
@@ -78,7 +88,7 @@ func EditUser() gin.HandlerFunc {
 			DateOfBirth: user.DateOfBirth,
 			Phone:       user.Phone,
 		}
-		res, err := service.EditUser(c, userId, update)
+		res, err := ctrl.userSvc.EditUser(c, userId, update)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -88,11 +98,11 @@ func EditUser() gin.HandlerFunc {
 }
 
 // DELETE
-func DeleteUser() gin.HandlerFunc {
+func (ctrl *UserController) DeleteUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userId := c.Param("userId")
 
-		res, err := service.DeleteUser(c, userId)
+		res, err := ctrl.userSvc.DeleteUser(c, userId)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -104,9 +114,9 @@ func DeleteUser() gin.HandlerFunc {
 }
 
 // GET ALL
-func GetAllUsers() gin.HandlerFunc {
+func (ctrl *UserController) GetAllUsers() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		users, err := service.GetAllUsers(c)
+		users, err := ctrl.userSvc.GetAllUsers(c)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -118,13 +128,14 @@ func GetAllUsers() gin.HandlerFunc {
 }
 
 // // Register
-func RegisterAccount() gin.HandlerFunc {
+func (ctrl *UserController) RegisterAccount() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.PostForm("username")
 		password := c.PostForm("password")
 		email := c.PostForm("email")
+		phone := c.PostForm("phone")
 
-		if govalidator.IsNull(username) || govalidator.IsNull(email) || govalidator.IsNull(password) {
+		if govalidator.IsNull(username) || govalidator.IsNull(email) || govalidator.IsNull(password) || govalidator.IsNull(phone) {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "All fields are required"}})
 			return
 		}
@@ -134,19 +145,25 @@ func RegisterAccount() gin.HandlerFunc {
 			return
 		}
 
+		err := helpers.ValidatePhoneNumber(phone)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
 		username = helpers.Santize(username)
 		password = helpers.Santize(password)
 		email = helpers.Santize(email)
+		phone = helpers.Santize(phone)
 
-		errFindUsername := service.GetUserByUserName(c, username)
-		_, errFindEmail := service.GetUserByEmail(c, email)
+		errFindUsername := ctrl.userSvc.GetUserByUserName(c, username)
+		_, errFindEmail := ctrl.userSvc.GetUserByEmail(c, email)
 
 		if errFindEmail == nil || errFindUsername == nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Username or email already exists"}})
 			return
 		}
 
-		res, err := service.RegisterAccount(c, username, password, email)
+		res, err := ctrl.userSvc.RegisterAccount(c, username, password, email, phone)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -156,7 +173,7 @@ func RegisterAccount() gin.HandlerFunc {
 }
 
 // Login
-func LoginAccount() gin.HandlerFunc {
+func (ctrl *UserController) LoginAccount() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.PostForm("username")
 		password := c.PostForm("password")
@@ -169,12 +186,37 @@ func LoginAccount() gin.HandlerFunc {
 		username = helpers.Santize(username)
 		password = helpers.Santize(password)
 
-		token, err := service.Login(c, username, password)
+		token, err := ctrl.userSvc.Login(c, username, password)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": token}})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "success", "data": token})
 
+	}
+}
+
+func (ctrl *UserController) ResetPassword() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		//email := c.PostForm("email")
+		phone := c.PostForm("phone")
+
+		if govalidator.IsNull(phone) {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "All fields are required"}})
+			return
+		}
+		errPhone := helpers.ValidatePhoneNumber(phone)
+		if errPhone != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": errPhone.Error()}})
+			return
+		}
+		res, err := ctrl.userSvc.ResetPassword(c, phone)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
+
+		//c.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
 	}
 }

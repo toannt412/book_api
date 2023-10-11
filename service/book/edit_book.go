@@ -1,13 +1,12 @@
 package book
 
 import (
-	"bookstore/dao/book"
 	"bookstore/serialize"
 	"context"
 )
 
-func EditBook(ctx context.Context, bookID string, updateBook *serialize.Book) (*serialize.Book, error) {
-	result, err := book.EditBook(ctx, bookID, updateBook)
+func (s *BookService) EditBook(ctx context.Context, bookID string, updateBook *serialize.Book) (*serialize.Book, error) {
+	result, err := s.bookRepo.EditBook(ctx, bookID, updateBook)
 	if err != nil {
 		return &serialize.Book{}, err
 	}

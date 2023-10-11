@@ -1,13 +1,12 @@
 package order
 
 import (
-	"bookstore/dao/cart"
 	"bookstore/serialize"
 	"context"
 )
 
-func GetOrderByID(cxt context.Context, orderID string) (*serialize.Order, error) {
-	result, err := cart.GetOrderByID(cxt, orderID)
+func (s *OrderService) GetOrderByID(cxt context.Context, orderID string) (*serialize.Order, error) {
+	result, err := s.orderService.GetOrderByID(cxt, orderID)
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func CreateCart() gin.HandlerFunc {
+type CartController struct {
+	cartSvc *service.CartService
+}
+
+func NewCartController() *CartController {
+	return &CartController{
+		cartSvc: service.NewCartRepository(),
+	}
+}
+func (ctrl *CartController) CreateCart() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var cart *serialize.Cart
 
@@ -28,7 +37,7 @@ func CreateCart() gin.HandlerFunc {
 			TotalAmount:   cart.TotalAmount,
 		}
 
-		res, err := service.CreateCart(c, newCart)
+		res, err := ctrl.cartSvc.CreateCart(c, newCart)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CartResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -37,11 +46,11 @@ func CreateCart() gin.HandlerFunc {
 	}
 }
 
-func GetCart() gin.HandlerFunc {
+func (ctrl *CartController) GetCart() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cartId := c.Param("cartId")
 
-		res, err := service.GetCart(c, cartId)
+		res, err := ctrl.cartSvc.GetCart(c, cartId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CartResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -50,11 +59,11 @@ func GetCart() gin.HandlerFunc {
 	}
 }
 
-func DeleteCart() gin.HandlerFunc {
+func (ctrl *CartController) DeleteCart() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cartId := c.Param("cartId")
 
-		res, err := service.DeleteCart(c, cartId)
+		res, err := ctrl.cartSvc.DeleteCart(c, cartId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CartResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -63,7 +72,7 @@ func DeleteCart() gin.HandlerFunc {
 	}
 }
 
-func EditACart() gin.HandlerFunc {
+func (ctrl *CartController) EditACart() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cartId := c.Param("cartId")
 		var cart *serialize.Cart
@@ -75,7 +84,7 @@ func EditACart() gin.HandlerFunc {
 			return
 		}
 
-		updatecart := &serialize.Cart{
+		updateCart := &serialize.Cart{
 			Id:            objId,
 			UserID:        cart.UserID,
 			Books:         cart.Books,
@@ -83,7 +92,7 @@ func EditACart() gin.HandlerFunc {
 			TotalAmount:   cart.TotalAmount,
 		}
 
-		res, err := service.EditCart(c, cartId, updatecart)
+		res, err := ctrl.cartSvc.EditCart(c, cartId, updateCart)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.CartResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 		}

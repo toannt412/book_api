@@ -7,21 +7,25 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func EnvMongoURI() string {
-	err := godotenv.Load()
+var Config ConfigSchema
 
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	return os.Getenv("MONGOURI")
+type ConfigSchema struct {
+	MongoURI   string
+	Port       string
+	AccountSID string
+	AuthToken  string
 }
 
-func EnvPort() string {
+func Load() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	return os.Getenv("PORT")
+	Config = ConfigSchema{
+		MongoURI:   os.Getenv("MONGOURI"),
+		Port:       os.Getenv("PORT"),
+		AccountSID: os.Getenv("TWILIO_ACCOUNT_SID"),
+		AuthToken:  os.Getenv("TWILIO_AUTH_TOKEN"),
+	}
 }

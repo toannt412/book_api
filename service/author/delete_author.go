@@ -1,12 +1,11 @@
 package author
 
 import (
-	"bookstore/dao/book"
 	"context"
 )
 
-func DeleteAuthor(ctx context.Context, authorID string) (string, error) {
-	result, err := book.DeleteAuthor(ctx, authorID)
+func (s *AuthorService) DeleteAuthor(ctx context.Context, authorID string) (string, error) {
+	result, err := s.authorRepo.DeleteAuthor(ctx, authorID)
 	if err != nil {
 		return "", err
 	}

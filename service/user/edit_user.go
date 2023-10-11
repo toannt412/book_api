@@ -1,13 +1,12 @@
 package user
 
 import (
-	"bookstore/dao/user"
 	"bookstore/serialize"
 	"context"
 )
 
-func EditUser(ctx context.Context, id string, sth *serialize.User) (*serialize.User, error) {
-	user, err := user.EditUser(ctx, id, sth)
+func (s *UserService) EditUser(ctx context.Context, id string, sth *serialize.User) (*serialize.User, error) {
+	user, err := s.userRepo.EditUser(ctx, id, sth)
 	if err != nil {
 		return nil, err
 	}
@@ -18,4 +17,12 @@ func EditUser(ctx context.Context, id string, sth *serialize.User) (*serialize.U
 		DateOfBirth: user.DateOfBirth,
 		Phone:       user.Phone,
 	}, nil
+}
+
+func (s *UserService) EditUserToken(ctx context.Context, token string) error {
+	err := s.userRepo.EditUserToken(ctx, token)
+	if err != nil {
+		return err
+	}
+	return nil
 }

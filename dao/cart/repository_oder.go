@@ -1,7 +1,7 @@
 package cart
 
 import (
-	"bookstore/configs"
+	"bookstore/dao"
 	"bookstore/dao/cart/model"
 	"bookstore/serialize"
 	"context"
@@ -11,15 +11,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var ordersCollection *mongo.Collection = configs.GetCollection(configs.DB, "orders")
+type OrderRepository struct {
+	ordersCollection *mongo.Collection
+}
 
-func CreateOrder(cxt context.Context, order *serialize.Order) (model.Order, error) {
-	result, err := ordersCollection.InsertOne(cxt, order)
+func NewOrderRepository() *OrderRepository {
+	var DB *mongo.Client = dao.ConnectDB()
+	return &OrderRepository{
+		ordersCollection: dao.GetCollection(DB, "orders"),
+	}
+}
+
+func (repo *OrderRepository) CreateOrder(cxt context.Context, order *serialize.Order) (model.Order, error) {
+	result, err := repo.ordersCollection.InsertOne(cxt, order)
 	if err != nil {
 		return model.Order{}, err
 	}
 	if result.InsertedID != nil {
-		err := ordersCollection.FindOne(cxt, bson.M{"_id": result.InsertedID}).Decode(&order)
+		err := repo.ordersCollection.FindOne(cxt, bson.M{"_id": result.InsertedID}).Decode(&order)
 		if err != nil {
 			return model.Order{}, err
 		}
@@ -46,19 +55,19 @@ func CreateOrder(cxt context.Context, order *serialize.Order) (model.Order, erro
 	}, nil
 }
 
-func GetOrderByID(cxt context.Context, orderID string) (model.Order, error) {
+func (repo *OrderRepository) GetOrderByID(cxt context.Context, orderID string) (model.Order, error) {
 	var order model.Order
 	objID, _ := primitive.ObjectIDFromHex(orderID)
-	err := ordersCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&order)
+	err := repo.ordersCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&order)
 	if err != nil {
 		return model.Order{}, err
 	}
 	return order, nil
 }
 
-func DeleteOrder(cxt context.Context, orderID string) (string, error) {
+func (repo *OrderRepository) DeleteOrder(cxt context.Context, orderID string) (string, error) {
 	objID, _ := primitive.ObjectIDFromHex(orderID)
-	result, err := ordersCollection.DeleteOne(cxt, bson.M{"_id": objID})
+	result, err := repo.ordersCollection.DeleteOne(cxt, bson.M{"_id": objID})
 	if err != nil {
 		return "Deleted failed", err
 	}
@@ -68,15 +77,15 @@ func DeleteOrder(cxt context.Context, orderID string) (string, error) {
 	return "Deleted successfully", nil
 }
 
-func EditOrder(cxt context.Context, orderID string, order *serialize.Order) (model.Order, error) {
+func (repo *OrderRepository) EditOrder(cxt context.Context, orderID string, order *serialize.Order) (model.Order, error) {
 	objID, _ := primitive.ObjectIDFromHex(orderID)
-	result, err := ordersCollection.UpdateOne(cxt, bson.M{"_id": objID}, bson.M{"$set": order})
+	result, err := repo.ordersCollection.UpdateOne(cxt, bson.M{"_id": objID}, bson.M{"$set": order})
 	if err != nil {
 		return model.Order{}, err
 	}
 	var updatedOrder model.Order
 	if result.MatchedCount == 1 {
-		err := ordersCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&updatedOrder)
+		err := repo.ordersCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&updatedOrder)
 		if err != nil {
 			return model.Order{}, err
 		}

@@ -1,13 +1,12 @@
 package author
 
 import (
-	"bookstore/dao/book"
 	"bookstore/serialize"
 	"context"
 )
 
-func GetAuthorByID(ctx context.Context, authorID string) (*serialize.Author, error) {
-	result, err := book.GetAuthorByID(ctx, authorID)
+func (s *AuthorService) GetAuthorByID(ctx context.Context, authorID string) (*serialize.Author, error) {
+	result, err := s.authorRepo.GetAuthorByID(ctx, authorID)
 	if err != nil {
 		return nil, err
 	}
@@ -20,8 +19,8 @@ func GetAuthorByID(ctx context.Context, authorID string) (*serialize.Author, err
 	}, nil
 }
 
-func GetAllAuthors(ctx context.Context) ([]serialize.Author, error) {
-	result, err := book.GetAllAuthors(ctx)
+func (s *AuthorService) GetAllAuthors(ctx context.Context) ([]serialize.Author, error) {
+	result, err := s.authorRepo.GetAllAuthors(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -1,23 +1,31 @@
 package routes
 
 import (
-	"bookstore/controllers"
 	"bookstore/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
 
-func AdminRoute(router *gin.Engine) {
+// type AdminRoute struct {
+// 	adminRoutes *controllers.AdminController
+// }
 
-	router.POST("/admin/login", controllers.LoginAccountAdmin())
-	auth := router.Group("/auth").Use(middlewares.AuthAdmin())
+//	func NewAdminRoute() *AdminRoute {
+//		return &AdminRoute{
+//			adminRoutes: controllers.NewAdminController(),
+//		}
+//	}
+func (r *Routes) AdminRoute(router *gin.Engine) {
+
+	router.POST("/admin/login", r.adminRoutes.LoginAccountAdmin())
+	auth := router.Group("/auth").Use(middlewares.NewMiddlewares().AuthAdmin())
 	{
-		auth.GET("/admins", controllers.GetAllAdmins())
-		auth.GET("/admin/:adminId", controllers.GetAdmin())
-		auth.PUT("/admin/:adminId", controllers.EditAdmin())
-		auth.DELETE("/admin/:adminId", controllers.DeleteAdmin())
-		auth.POST("/admin", controllers.CreateAdmin())
-		auth.POST("/logout", middlewares.LogoutAdmin())
+		auth.GET("/admins", r.adminRoutes.GetAllAdmins())
+		auth.GET("/admin/:adminId", r.adminRoutes.GetAdmin())
+		auth.PUT("/admin/:adminId", r.adminRoutes.EditAdmin())
+		auth.DELETE("/admin/:adminId", r.adminRoutes.DeleteAdmin())
+		auth.POST("/admin", r.adminRoutes.CreateAdmin())
+		auth.POST("/logout", middlewares.NewMiddlewares().LogoutAdmin())
 	}
 
 }

@@ -1,13 +1,12 @@
 package category
 
 import (
-	"bookstore/dao/book"
 	"bookstore/serialize"
 	"context"
 )
 
-func EditCategory(ctx context.Context, categoryID string, category *serialize.Category) (*serialize.Category, error) {
-	result, err := book.EditCategory(ctx, categoryID, category)
+func (s *CategoryService) EditCategory(ctx context.Context, categoryID string, category *serialize.Category) (*serialize.Category, error) {
+	result, err := s.categoryRepo.EditCategory(ctx, categoryID, category)
 	if err != nil {
 		return nil, err
 	}

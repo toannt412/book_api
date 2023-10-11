@@ -2,12 +2,11 @@ package service
 
 import (
 	"bookstore/serialize"
-	"bookstore/dao/admin"
 	"context"
 )
 
-func EditAdmin(ctx context.Context, id string, sth *serialize.Admin) (*serialize.Admin, error) {
-	user, err := admin.EditAdmin(ctx, id, sth)
+func (s *AdminService) EditAdmin(ctx context.Context, id string, sth *serialize.Admin) (*serialize.Admin, error) {
+	user, err := s.adminRepo.EditAdmin(ctx, id, sth)
 	if err != nil {
 		return nil, err
 	}
@@ -16,4 +15,12 @@ func EditAdmin(ctx context.Context, id string, sth *serialize.Admin) (*serialize
 		Phone:    user.Phone,
 		Role:     user.Role,
 	}, nil
+}
+
+func (s *AdminService) EditAdminToken(ctx context.Context, token string) error {
+	err := s.adminRepo.EditAminToken(ctx, token)
+	if err != nil {
+		return err
+	}
+	return nil
 }

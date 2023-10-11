@@ -1,12 +1,11 @@
 package user
 
 import (
-	"bookstore/dao/user"
 	"context"
 )
 
-func RegisterAccount(ctx context.Context, username, password, email string) (string, error) {
-	result, err := user.RegisterAccount(ctx, username, password, email)
+func (s *UserService) RegisterAccount(ctx context.Context, username, password, email, phone string) (string, error) {
+	result, err := s.userRepo.RegisterAccount(ctx, username, password, email, phone)
 	if err != nil {
 		return "Register Fail", err
 	}

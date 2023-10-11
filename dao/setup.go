@@ -1,6 +1,7 @@
-package configs
+package dao
 
 import (
+	"bookstore/configs"
 	"context"
 	"fmt"
 	"log"
@@ -13,7 +14,7 @@ import (
 func ConnectDB() *mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(EnvMongoURI()))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(configs.Config.MongoURI))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -26,9 +27,6 @@ func ConnectDB() *mongo.Client {
 	fmt.Println("Connected to MongoDB")
 	return client
 }
-
-// Client instance
-var DB *mongo.Client = ConnectDB()
 
 // getting database collections
 func GetCollection(client *mongo.Client, collectionName string) *mongo.Collection {

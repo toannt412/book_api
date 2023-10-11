@@ -1,13 +1,12 @@
 package author
 
 import (
-	"bookstore/dao/book"
 	"bookstore/serialize"
 	"context"
 )
 
-func EditAuthor(ctx context.Context, id string, author *serialize.Author) (*serialize.Author, error) {
-	result, err := book.EditAuthor(ctx, id, author)
+func (s *AuthorService) EditAuthor(ctx context.Context, id string, author *serialize.Author) (*serialize.Author, error) {
+	result, err := s.authorRepo.EditAuthor(ctx, id, author)
 	if err != nil {
 		return nil, err
 	}

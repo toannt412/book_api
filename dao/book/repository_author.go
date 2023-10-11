@@ -1,7 +1,7 @@
 package book
 
 import (
-	"bookstore/configs"
+	"bookstore/dao"
 	"bookstore/dao/book/model"
 	"bookstore/serialize"
 	"context"
@@ -11,15 +11,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var authorsCollection *mongo.Collection = configs.GetCollection(configs.DB, "authors")
+type AuthorRepository struct {
+	authorsCollection *mongo.Collection
+}
 
-func CreateAuthor(ctx context.Context, newAuthor *serialize.Author) (model.Author, error) {
-	result, err := authorsCollection.InsertOne(ctx, newAuthor)
+func NewAuthorRepository() *AuthorRepository {
+	var DB *mongo.Client = dao.ConnectDB()
+	return &AuthorRepository{
+		authorsCollection: dao.GetCollection(DB, "authors"),
+	}
+}
+
+func (repo *AuthorRepository) CreateAuthor(ctx context.Context, newAuthor *serialize.Author) (model.Author, error) {
+	result, err := repo.authorsCollection.InsertOne(ctx, newAuthor)
 	if err != nil {
 		return model.Author{}, err
 	}
 	if result.InsertedID != nil {
-		err := authorsCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&newAuthor)
+		err := repo.authorsCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&newAuthor)
 		if err != nil {
 			return model.Author{}, err
 		}
@@ -33,19 +42,19 @@ func CreateAuthor(ctx context.Context, newAuthor *serialize.Author) (model.Autho
 	}, nil
 }
 
-func GetAuthorByID(ctx context.Context, authorID string) (model.Author, error) {
+func (repo *AuthorRepository) GetAuthorByID(ctx context.Context, authorID string) (model.Author, error) {
 	var author model.Author
 	objID, _ := primitive.ObjectIDFromHex(authorID)
-	err := authorsCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&author)
+	err := repo.authorsCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&author)
 	if err != nil {
 		return model.Author{}, err
 	}
 	return author, err
 }
 
-func GetAllAuthors(ctx context.Context) ([]model.Author, error) {
+func (repo *AuthorRepository) GetAllAuthors(ctx context.Context) ([]model.Author, error) {
 	var authors []model.Author
-	cursor, err := authorsCollection.Find(ctx, bson.M{})
+	cursor, err := repo.authorsCollection.Find(ctx, bson.M{})
 	if err != nil {
 		return []model.Author{}, err
 	}
@@ -60,9 +69,9 @@ func GetAllAuthors(ctx context.Context) ([]model.Author, error) {
 	return authors, nil
 }
 
-func DeleteAuthor(ctx context.Context, authorID string) (string, error) {
+func (repo *AuthorRepository) DeleteAuthor(ctx context.Context, authorID string) (string, error) {
 	objID, _ := primitive.ObjectIDFromHex(authorID)
-	result, err := authorsCollection.DeleteOne(ctx, bson.M{"_id": objID})
+	result, err := repo.authorsCollection.DeleteOne(ctx, bson.M{"_id": objID})
 	if err != nil {
 		return "Deleted fail", err
 	}
@@ -72,7 +81,7 @@ func DeleteAuthor(ctx context.Context, authorID string) (string, error) {
 	return "Deleted successfully", nil
 }
 
-func EditAuthor(ctx context.Context, authorID string, author *serialize.Author) (model.Author, error) {
+func (repo *AuthorRepository) EditAuthor(ctx context.Context, authorID string, author *serialize.Author) (model.Author, error) {
 	objID, err := primitive.ObjectIDFromHex(authorID)
 	if err != nil {
 		return model.Author{}, err
@@ -83,7 +92,7 @@ func EditAuthor(ctx context.Context, authorID string, author *serialize.Author) 
 	// if er != nil {
 	// 	return model.Author{}, er
 	// }
-	result, err := authorsCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": author})
+	result, err := repo.authorsCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": author})
 	if err != nil {
 		return model.Author{}, err
 	}
@@ -92,7 +101,7 @@ func EditAuthor(ctx context.Context, authorID string, author *serialize.Author) 
 	}
 
 	var updatedAuthor model.Author
-	if err := authorsCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&updatedAuthor); err != nil {
+	if err := repo.authorsCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&updatedAuthor); err != nil {
 		return model.Author{}, err
 	}
 

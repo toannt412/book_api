@@ -1,13 +1,12 @@
 package category
 
 import (
-	"bookstore/dao/book"
 	"bookstore/serialize"
 	"context"
 )
 
-func GetCategoryByID(ctx context.Context, categoryID string) (*serialize.Category, error) {
-	result, err := book.GetCategoryByID(ctx, categoryID)
+func (s *CategoryService) GetCategoryByID(ctx context.Context, categoryID string) (*serialize.Category, error) {
+	result, err := s.categoryRepo.GetCategoryByID(ctx, categoryID)
 	if err != nil {
 		return nil, err
 	}
@@ -17,8 +16,8 @@ func GetCategoryByID(ctx context.Context, categoryID string) (*serialize.Categor
 	}, nil
 }
 
-func GetAllCategories(ctx context.Context) ([]*serialize.Category, error) {
-	result, err := book.GetAllCategories(ctx)
+func (s *CategoryService) GetAllCategories(ctx context.Context) ([]*serialize.Category, error) {
+	result, err := s.categoryRepo.GetAllCategories(ctx)
 	if err != nil {
 		return nil, err
 	}

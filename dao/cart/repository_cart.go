@@ -1,7 +1,7 @@
 package cart
 
 import (
-	"bookstore/configs"
+	"bookstore/dao"
 	"bookstore/dao/cart/model"
 	"bookstore/serialize"
 	"context"
@@ -11,15 +11,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var cartsCollection *mongo.Collection = configs.GetCollection(configs.DB, "carts")
+type CartRepository struct {
+	cartsCollection *mongo.Collection
+}
 
-func CreateCart(cxt context.Context, cart *serialize.Cart) (model.Cart, error) {
-	result, err := cartsCollection.InsertOne(cxt, cart)
+func NewCartRepository() *CartRepository {
+	var DB *mongo.Client = dao.ConnectDB()
+	return &CartRepository{
+		cartsCollection: dao.GetCollection(DB, "carts"),
+	}
+}
+
+func (repo *CartRepository) CreateCart(cxt context.Context, cart *serialize.Cart) (model.Cart, error) {
+	result, err := repo.cartsCollection.InsertOne(cxt, cart)
 	if err != nil {
 		return model.Cart{}, err
 	}
 	if result.InsertedID != nil {
-		err := cartsCollection.FindOne(cxt, bson.M{"_id": result.InsertedID}).Decode(&cart)
+		err := repo.cartsCollection.FindOne(cxt, bson.M{"_id": result.InsertedID}).Decode(&cart)
 		if err != nil {
 			return model.Cart{}, err
 		}
@@ -43,19 +52,19 @@ func CreateCart(cxt context.Context, cart *serialize.Cart) (model.Cart, error) {
 	}, nil
 }
 
-func GetCart(cxt context.Context, cartID string) (model.Cart, error) {
+func (repo *CartRepository) GetCart(cxt context.Context, cartID string) (model.Cart, error) {
 	var cart model.Cart
 	objID, _ := primitive.ObjectIDFromHex(cartID)
-	err := cartsCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&cart)
+	err := repo.cartsCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&cart)
 	if err != nil {
 		return model.Cart{}, err
 	}
 	return cart, nil
 }
 
-func DeleteCart(cxt context.Context, cartID string) (string, error) {
+func (repo *CartRepository) DeleteCart(cxt context.Context, cartID string) (string, error) {
 	objID, _ := primitive.ObjectIDFromHex(cartID)
-	result, err := cartsCollection.DeleteOne(cxt, bson.M{"_id": objID})
+	result, err := repo.cartsCollection.DeleteOne(cxt, bson.M{"_id": objID})
 	if err != nil {
 		return "Deleted failed", err
 	}
@@ -65,15 +74,15 @@ func DeleteCart(cxt context.Context, cartID string) (string, error) {
 	return "Deleted successfully", nil
 }
 
-func EditCart(cxt context.Context, cartID string, cart *serialize.Cart) (model.Cart, error) {
+func (repo *CartRepository) EditCart(cxt context.Context, cartID string, cart *serialize.Cart) (model.Cart, error) {
 	objID, _ := primitive.ObjectIDFromHex(cartID)
-	result, err := cartsCollection.UpdateOne(cxt, bson.M{"_id": objID}, bson.M{"$set": cart})
+	result, err := repo.cartsCollection.UpdateOne(cxt, bson.M{"_id": objID}, bson.M{"$set": cart})
 	if err != nil {
 		return model.Cart{}, err
 	}
 	var updatedCart model.Cart
 	if result.MatchedCount == 1 {
-		err := cartsCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&updatedCart)
+		err := repo.cartsCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&updatedCart)
 		if err != nil {
 			return model.Cart{}, err
 		}

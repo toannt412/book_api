@@ -1,7 +1,7 @@
 package book
 
 import (
-	"bookstore/configs"
+	"bookstore/dao"
 	"bookstore/dao/book/model"
 	"bookstore/serialize"
 	"context"
@@ -11,15 +11,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var booksCollection *mongo.Collection = configs.GetCollection(configs.DB, "books")
+type BookRepository struct {
+	booksCollection *mongo.Collection
+}
 
-func CreateBook(ctx context.Context, newBook *serialize.Book) (model.Book, error) {
-	result, err := booksCollection.InsertOne(ctx, newBook)
+func NewBookRepository() *BookRepository {
+	var DB *mongo.Client = dao.ConnectDB()
+	return &BookRepository{
+		booksCollection: dao.GetCollection(DB, "books"),
+	}
+}
+
+func (repo *BookRepository) CreateBook(ctx context.Context, newBook *serialize.Book) (model.Book, error) {
+	result, err := repo.booksCollection.InsertOne(ctx, newBook)
 	if err != nil {
 		return model.Book{}, err
 	}
 	if result.InsertedID != nil {
-		err := booksCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&newBook)
+		err := repo.booksCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&newBook)
 		if err != nil {
 			return model.Book{}, err
 		}
@@ -55,9 +64,9 @@ func CreateBook(ctx context.Context, newBook *serialize.Book) (model.Book, error
 	}, nil
 }
 
-func GetAllBooks(ctx context.Context) ([]model.Book, error) {
+func (repo *BookRepository) GetAllBooks(ctx context.Context) ([]model.Book, error) {
 	var books []model.Book
-	cursor, err := booksCollection.Find(ctx, bson.M{})
+	cursor, err := repo.booksCollection.Find(ctx, bson.M{})
 	if err != nil {
 		return []model.Book{}, err
 	}
@@ -72,19 +81,19 @@ func GetAllBooks(ctx context.Context) ([]model.Book, error) {
 	return books, nil
 }
 
-func GetBookByID(cxt context.Context, bookID string) (model.Book, error) {
+func (repo *BookRepository) GetBookByID(cxt context.Context, bookID string) (model.Book, error) {
 	var book model.Book
 	objID, _ := primitive.ObjectIDFromHex(bookID)
-	err := booksCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&book)
+	err := repo.booksCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&book)
 	if err != nil {
 		return model.Book{}, err
 	}
 	return book, err
 }
 
-func DeleteBook(ctx context.Context, bookID string) (string, error) {
+func (repo *BookRepository) DeleteBook(ctx context.Context, bookID string) (string, error) {
 	objID, _ := primitive.ObjectIDFromHex(bookID)
-	result, err := booksCollection.DeleteOne(ctx, bson.M{"_id": objID})
+	result, err := repo.booksCollection.DeleteOne(ctx, bson.M{"_id": objID})
 	if err != nil {
 		return "Deleted failed", err
 	}
@@ -94,20 +103,20 @@ func DeleteBook(ctx context.Context, bookID string) (string, error) {
 	return "Deleted successfully", nil
 }
 
-func EditBook(ctx context.Context, bookID string, book *serialize.Book) (model.Book, error) {
+func (repo *BookRepository) EditBook(ctx context.Context, bookID string, book *serialize.Book) (model.Book, error) {
 	objID, err := primitive.ObjectIDFromHex(bookID)
 	if err != nil {
 		return model.Book{}, err
 	}
 
-	result, err := booksCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": book})
+	result, err := repo.booksCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": book})
 	if err != nil {
 		return model.Book{}, err
 	}
 
 	var updatedBook model.Book
 	if result.MatchedCount == 1 {
-		err := booksCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&updatedBook)
+		err := repo.booksCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&updatedBook)
 		if err != nil {
 			return model.Book{}, err
 		}

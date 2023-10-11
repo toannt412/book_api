@@ -13,7 +13,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func LoginAccountAdmin() gin.HandlerFunc {
+type AdminController struct {
+	adminSvc *service.AdminService
+}
+
+func NewAdminController() *AdminController {
+	return &AdminController{
+		adminSvc: service.NewAdminService(),
+	}
+}
+func (ctrl *AdminController) LoginAccountAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.PostForm("username")
 		password := c.PostForm("password")
@@ -26,7 +35,7 @@ func LoginAccountAdmin() gin.HandlerFunc {
 		username = helpers.Santize(username)
 		password = helpers.Santize(password)
 
-		res, err := service.Login(c, username, password)
+		res, err := ctrl.adminSvc.Login(c, username, password)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "Username or password is incorrect"})
 			return
@@ -36,11 +45,11 @@ func LoginAccountAdmin() gin.HandlerFunc {
 	}
 }
 
-func GetAdmin() gin.HandlerFunc {
+func (ctrl *AdminController) GetAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		adminId := c.Param("adminId")
 
-		res, err := service.GetAdminByID(c, adminId)
+		res, err := ctrl.adminSvc.GetAdminByID(c, adminId)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, responses.AdminResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -50,7 +59,7 @@ func GetAdmin() gin.HandlerFunc {
 	}
 }
 
-func EditAdmin() gin.HandlerFunc {
+func (ctrl *AdminController) EditAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		adminId := c.Param("adminId")
 		var admin *serialize.Admin
@@ -64,7 +73,7 @@ func EditAdmin() gin.HandlerFunc {
 			Phone:    admin.Phone,
 			Role:     admin.Role,
 		}
-		res, err := service.EditAdmin(c, adminId, update)
+		res, err := ctrl.adminSvc.EditAdmin(c, adminId, update)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, responses.AdminResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -73,11 +82,11 @@ func EditAdmin() gin.HandlerFunc {
 	}
 }
 
-func DeleteAdmin() gin.HandlerFunc {
+func (ctrl *AdminController) DeleteAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		adminId := c.Param("adminId")
 
-		res, err := service.DeleteAdmin(c, adminId)
+		res, err := ctrl.adminSvc.DeleteAdmin(c, adminId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -87,10 +96,10 @@ func DeleteAdmin() gin.HandlerFunc {
 	}
 }
 
-func GetAllAdmins() gin.HandlerFunc {
+func (ctrl *AdminController) GetAllAdmins() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		admins, err := service.GetAllAdmins(c)
+		admins, err := ctrl.adminSvc.GetAllAdmins(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -99,7 +108,7 @@ func GetAllAdmins() gin.HandlerFunc {
 	}
 }
 
-func CreateAdmin() gin.HandlerFunc {
+func (ctrl *AdminController) CreateAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		//Validate the request body
@@ -144,8 +153,8 @@ func CreateAdmin() gin.HandlerFunc {
 		admin.Password = helpers.Santize(admin.Password)
 		admin.Email = helpers.Santize(admin.Email)
 
-		errFindEmail := service.GetAdminByEmail(c, admin.Email)
-		errFindUsername := service.GetAdminByUserName(c, admin.UserName)
+		errFindEmail := ctrl.adminSvc.GetAdminByEmail(c, admin.Email)
+		errFindUsername := ctrl.adminSvc.GetAdminByUserName(c, admin.UserName)
 		if errFindEmail == nil || errFindUsername == nil {
 			c.JSON(http.StatusBadRequest, responses.AdminResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Account already exists"}})
 			return
@@ -161,7 +170,7 @@ func CreateAdmin() gin.HandlerFunc {
 		// 	Role:     newAdmin.Role,
 		// }
 
-		res, err := service.CreateAdmin(c, newAdmin)
+		res, err := ctrl.adminSvc.CreateAdmin(c, newAdmin)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.AdminResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return

@@ -1,14 +1,13 @@
 package service
 
 import (
-	"bookstore/dao/admin"
 	"bookstore/dao/admin/model"
 	"bookstore/serialize"
 	"context"
 )
 
-func CreateAdmin(ctx context.Context, sth model.Admin) (*serialize.Admin, error) {
-	user, err := admin.CreateAdmin(ctx, sth)
+func (s *AdminService) CreateAdmin(ctx context.Context, sth model.Admin) (*serialize.Admin, error) {
+	user, err := s.adminRepo.CreateAdmin(ctx, sth)
 	if err != nil {
 		return nil, err
 	}

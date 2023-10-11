@@ -1,14 +1,13 @@
 package author
 
 import (
-	"bookstore/dao/book"
 	"bookstore/serialize"
 	"context"
 )
 
-func CreateAuthor(ctx context.Context, newAuthor *serialize.Author) (*serialize.Author, error) {
-	result, err := book.CreateAuthor(ctx, newAuthor)
-	if err != nil{
+func (s *AuthorService) CreateAuthor(ctx context.Context, newAuthor *serialize.Author) (*serialize.Author, error) {
+	result, err := s.authorRepo.CreateAuthor(ctx, newAuthor)
+	if err != nil {
 		return nil, err
 	}
 	return &serialize.Author{

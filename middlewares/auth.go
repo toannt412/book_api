@@ -2,18 +2,26 @@ package middlewares
 
 import (
 	"bookstore/auth"
-	"bookstore/configs"
+	service "bookstore/service/admin"
+	"bookstore/service/user"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var adminsCollection *mongo.Collection = configs.GetCollection(configs.DB, "admins")
-var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
+type Middlewares struct {
+	adminSvc *service.AdminService
+	userSvc  *user.UserService
+}
 
-func AuthAdmin() gin.HandlerFunc {
+func NewMiddlewares() *Middlewares {
+	return &Middlewares{
+		adminSvc: service.NewAdminService(),
+		userSvc:  user.NewUserService(),
+	}
+}
+func (m *Middlewares) AuthAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		//adminsCollection := admin.NewAdminRepository()
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
 			c.JSON(401, gin.H{"error": "request does not contain an access token"})
@@ -21,12 +29,19 @@ func AuthAdmin() gin.HandlerFunc {
 			return
 		}
 
-		err := adminsCollection.FindOne(c, bson.M{"token": tokenString})
-		if err.Err() != nil {
+		_, errToken := m.adminSvc.GetAdminToken(c, tokenString)
+		if errToken != nil {
 			c.JSON(401, gin.H{"error": "token is invalid"})
 			c.Abort()
 			return
+
 		}
+		// err := adminsCollection.FindOne(c, bson.M{"token": tokenString})
+		// if err.Err() != nil {
+		// 	c.JSON(401, gin.H{"error": "token is invalid"})
+		// 	c.Abort()
+		// 	return
+		// }
 		isValidToken := auth.CheckValidToken(tokenString)
 		if isValidToken != nil {
 			c.JSON(401, gin.H{"error": isValidToken})
@@ -43,7 +58,7 @@ func AuthAdmin() gin.HandlerFunc {
 	}
 }
 
-func LogoutAdmin() gin.HandlerFunc {
+func (m *Middlewares) LogoutAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
@@ -51,23 +66,38 @@ func LogoutAdmin() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		var find bson.M
-		checkToken := adminsCollection.FindOne(c, bson.M{"token": tokenString}).Decode(&find)
+		isValidToken := auth.CheckValidToken(tokenString)
+		if isValidToken != nil {
+			c.JSON(401, gin.H{"error": isValidToken})
+			c.Abort()
+			return
+		}
+		_, checkToken := m.adminSvc.GetAdminToken(c, tokenString)
 		if checkToken == nil {
-			filter := bson.M{"_id": find["_id"]}
-			update := bson.M{"$unset": bson.M{"token": ""}}
-			_, err := adminsCollection.UpdateOne(c, filter, update)
-			if err != nil {
-				c.JSON(401, gin.H{"error": err.Error()})
+			errRemoveToken := m.adminSvc.EditAdminToken(c, tokenString)
+			if errRemoveToken != nil {
+				c.JSON(401, gin.H{"error": errRemoveToken})
 				c.Abort()
 				return
 			}
 		}
+		// var find bson.M
+		// checkToken := adminsCollection.FindOne(c, bson.M{"token": tokenString}).Decode(&find)
+		// if checkToken == nil {
+		// 	filter := bson.M{"_id": find["_id"]}
+		// 	update := bson.M{"$unset": bson.M{"token": ""}}
+		// 	_, err := adminsCollection.UpdateOne(c, filter, update)
+		// 	if err != nil {
+		// 		c.JSON(401, gin.H{"error": err.Error()})
+		// 		c.Abort()
+		// 		return
+		// 	}
+		// }
 		c.JSON(200, gin.H{"status": "logout success"})
 	}
 }
 
-func AuthUser() gin.HandlerFunc {
+func (m *Middlewares) AuthUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
@@ -76,11 +106,12 @@ func AuthUser() gin.HandlerFunc {
 			return
 		}
 
-		err := userCollection.FindOne(c, bson.M{"token": tokenString})
-		if err.Err() != nil {
+		_, errToken := m.userSvc.GetUserToken(c, tokenString)
+		if errToken != nil {
 			c.JSON(401, gin.H{"error": "token is invalid"})
 			c.Abort()
 			return
+
 		}
 		isValidToken := auth.CheckValidToken(tokenString)
 		if isValidToken != nil {
@@ -98,7 +129,7 @@ func AuthUser() gin.HandlerFunc {
 	}
 }
 
-func LogoutUser() gin.HandlerFunc {
+func (m *Middlewares) LogoutUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
@@ -106,14 +137,18 @@ func LogoutUser() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		var find bson.M
-		checkToken := userCollection.FindOne(c, bson.M{"token": tokenString}).Decode(&find)
+		isValidToken := auth.CheckValidToken(tokenString)
+		if isValidToken != nil {
+			c.JSON(401, gin.H{"error": isValidToken})
+			c.Abort()
+			return
+		}
+
+		_, checkToken := m.userSvc.GetUserToken(c, tokenString)
 		if checkToken == nil {
-			filter := bson.M{"_id": find["_id"]}
-			update := bson.M{"$unset": bson.M{"token": ""}}
-			_, err := userCollection.UpdateOne(c, filter, update)
-			if err != nil {
-				c.JSON(401, gin.H{"error": err.Error()})
+			errRemoveToken := m.userSvc.EditUserToken(c, tokenString)
+			if errRemoveToken != nil {
+				c.JSON(401, gin.H{"error": errRemoveToken})
 				c.Abort()
 				return
 			}
@@ -121,3 +156,26 @@ func LogoutUser() gin.HandlerFunc {
 		c.JSON(200, gin.H{"status": "logout success"})
 	}
 }
+
+// func CheckEmail() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		email := c.PostForm("email")
+// 		if govalidator.IsNull(email) {
+// 			c.JSON(400, gin.H{"error": "All fields are required"})
+// 			c.Abort()
+// 			return
+// 		}
+// 		if !govalidator.IsEmail(email) {
+// 			c.JSON(400, gin.H{"error": "Invalid email"})
+// 			c.Abort()
+// 			return
+// 		}
+// 		_, errFindEmail := service.GetUserByEmail(c, email)
+// 		if errFindEmail != nil {
+// 			c.JSON(400, gin.H{"error": "Email not registered"})
+// 			return
+// 		}
+// 		c.Next()
+// 	}
+
+// }

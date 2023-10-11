@@ -2,7 +2,7 @@ package admin
 
 import (
 	"bookstore/auth"
-	"bookstore/configs"
+	"bookstore/dao"
 	"bookstore/dao/admin/model"
 	"bookstore/helpers"
 	"bookstore/serialize"
@@ -14,15 +14,27 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var adminsCollection *mongo.Collection = configs.GetCollection(configs.DB, "admins")
+// Client instance
 
-func GetAdminByID(ctx context.Context, adminId string) (model.Admin, error) {
+type AdminRepository struct {
+	adminsCollection *mongo.Collection
+}
+
+func NewAdminRepository() *AdminRepository {
+	var DB *mongo.Client = dao.ConnectDB()
+
+	return &AdminRepository{
+		adminsCollection: dao.GetCollection(DB, "admins"),
+	}
+}
+
+func (repo *AdminRepository) GetAdminByID(ctx context.Context, adminId string) (model.Admin, error) {
 
 	var admin model.Admin
 
 	objId, _ := primitive.ObjectIDFromHex(adminId)
 
-	err := adminsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&admin)
+	err := repo.adminsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&admin)
 	if err != nil {
 		return model.Admin{}, err
 	}
@@ -31,10 +43,10 @@ func GetAdminByID(ctx context.Context, adminId string) (model.Admin, error) {
 
 }
 
-func LoginAccountAdmin(ctx context.Context, username, password string) (model.Admin, string, error) {
+func (repo *AdminRepository) LoginAccountAdmin(ctx context.Context, username, password string) (model.Admin, string, error) {
 	var admin model.Admin
 	var find bson.M
-	err := adminsCollection.FindOne(context.TODO(), bson.M{"username": username}).Decode(&find)
+	err := repo.adminsCollection.FindOne(context.TODO(), bson.M{"username": username}).Decode(&find)
 	if err != nil {
 		return model.Admin{}, "", err
 	}
@@ -51,7 +63,7 @@ func LoginAccountAdmin(ctx context.Context, username, password string) (model.Ad
 		return model.Admin{}, "", err
 	}
 	adminID := find["_id"]
-	_, errAddToken := adminsCollection.UpdateOne(context.TODO(), bson.M{"_id": adminID}, bson.M{"$set": bson.M{"token": token}})
+	_, errAddToken := repo.adminsCollection.UpdateOne(context.TODO(), bson.M{"_id": adminID}, bson.M{"$set": bson.M{"token": token}})
 	if errAddToken != nil {
 		return model.Admin{}, "", errAddToken
 	}
@@ -60,11 +72,11 @@ func LoginAccountAdmin(ctx context.Context, username, password string) (model.Ad
 
 }
 
-func GetAdminByUserName(ctx context.Context, username string) (model.Admin, error) {
+func (repo *AdminRepository) GetAdminByUserName(ctx context.Context, username string) (model.Admin, error) {
 
 	var admin model.Admin
 
-	err := adminsCollection.FindOne(ctx, bson.M{"username": username}).Decode(&admin)
+	err := repo.adminsCollection.FindOne(ctx, bson.M{"username": username}).Decode(&admin)
 	if err != nil {
 		return model.Admin{}, err
 	}
@@ -73,11 +85,11 @@ func GetAdminByUserName(ctx context.Context, username string) (model.Admin, erro
 
 }
 
-func GetAdminByEmail(ctx context.Context, email string) (model.Admin, error) {
+func (repo *AdminRepository) GetAdminByEmail(ctx context.Context, email string) (model.Admin, error) {
 
 	var admin model.Admin
 
-	err := adminsCollection.FindOne(ctx, bson.M{"email": email}).Decode(&admin)
+	err := repo.adminsCollection.FindOne(ctx, bson.M{"email": email}).Decode(&admin)
 	if err != nil {
 		return model.Admin{}, err
 	}
@@ -86,7 +98,7 @@ func GetAdminByEmail(ctx context.Context, email string) (model.Admin, error) {
 
 }
 
-func EditAdmin(ctx context.Context, id string, admin *serialize.Admin) (model.Admin, error) {
+func (repo *AdminRepository) EditAdmin(ctx context.Context, id string, admin *serialize.Admin) (model.Admin, error) {
 	//var admin model.Admin
 	objId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -102,14 +114,14 @@ func EditAdmin(ctx context.Context, id string, admin *serialize.Admin) (model.Ad
 		Role:     admin.Role,
 	}
 
-	result, err := adminsCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
+	result, err := repo.adminsCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
 	if err != nil {
 		return model.Admin{}, err
 	}
 
 	var updatedAdmin model.Admin
 	if result.MatchedCount == 1 {
-		err := adminsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedAdmin)
+		err := repo.adminsCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedAdmin)
 		if err != nil {
 			return model.Admin{}, err
 		}
@@ -122,13 +134,13 @@ func EditAdmin(ctx context.Context, id string, admin *serialize.Admin) (model.Ad
 	}, nil
 }
 
-func DeleteAdmin(ctx context.Context, id string) (string, error) {
+func (repo *AdminRepository) DeleteAdmin(ctx context.Context, id string) (string, error) {
 	objId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return "Deleted fail", err
 	}
 
-	result, err := adminsCollection.DeleteOne(ctx, bson.M{"_id": objId})
+	result, err := repo.adminsCollection.DeleteOne(ctx, bson.M{"_id": objId})
 	if err != nil {
 		return "Deleted fail", err
 	}
@@ -140,10 +152,10 @@ func DeleteAdmin(ctx context.Context, id string) (string, error) {
 	return "Deleted successfully", nil
 }
 
-func CreateAdmin(ctx context.Context, admin model.Admin) (model.Admin, error) {
+func (repo *AdminRepository) CreateAdmin(ctx context.Context, admin model.Admin) (model.Admin, error) {
 	admin.Password, _ = helpers.Hash(admin.Password)
 
-	_, err := adminsCollection.InsertOne(ctx, admin)
+	_, err := repo.adminsCollection.InsertOne(ctx, admin)
 	if err != nil {
 		return model.Admin{}, err
 	}
@@ -158,10 +170,10 @@ func CreateAdmin(ctx context.Context, admin model.Admin) (model.Admin, error) {
 	}, nil
 }
 
-func GetAllAdmins(ctx context.Context) ([]model.Admin, error) {
+func (repo *AdminRepository) GetAllAdmins(ctx context.Context) ([]model.Admin, error) {
 
 	var admins []model.Admin
-	cursor, err := adminsCollection.Find(ctx, bson.M{})
+	cursor, err := repo.adminsCollection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
@@ -174,4 +186,21 @@ func GetAllAdmins(ctx context.Context) ([]model.Admin, error) {
 		admins = append(admins, admin)
 	}
 	return admins, nil
+}
+
+func (repo *AdminRepository) GetAdminToken(ctx context.Context, token string) (model.Admin, error) {
+	var admin model.Admin
+	err := repo.adminsCollection.FindOne(ctx, bson.M{"token": token}).Decode(&admin)
+	if err != nil {
+		return model.Admin{}, err
+	}
+	return admin, nil
+}
+
+func (repo *AdminRepository) EditAminToken(ctx context.Context, token string) error {
+	_, err := repo.adminsCollection.UpdateOne(ctx, bson.M{"token": token}, bson.M{"$unset": bson.M{"token": ""}})
+	if err != nil {
+		return err
+	}
+	return nil
 }

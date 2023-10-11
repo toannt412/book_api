@@ -1,13 +1,12 @@
 package order
 
 import (
-	"bookstore/dao/cart"
 	"bookstore/serialize"
 	"context"
 )
 
-func EditOrder(cxt context.Context, orderID string, updateOrder *serialize.Order) (*serialize.Order, error) {
-	result, err := cart.EditOrder(cxt, orderID, updateOrder)
+func (s *OrderService) EditOrder(cxt context.Context, orderID string, updateOrder *serialize.Order) (*serialize.Order, error) {
+	result, err := s.orderService.EditOrder(cxt, orderID, updateOrder)
 	if err != nil {
 		return nil, err
 	}

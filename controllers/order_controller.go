@@ -11,7 +11,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func CreateOrder() gin.HandlerFunc {
+type OrderController struct {
+	orderSvc *service.OrderService
+}
+
+func NewOrderController() *OrderController {
+	return &OrderController{
+		orderSvc: service.NewOrderService(),
+	}
+}
+func (ctrl *OrderController) CreateOrder() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var order *serialize.Order
 
@@ -32,7 +41,7 @@ func CreateOrder() gin.HandlerFunc {
 			OrderDate:     time.Now(),
 		}
 
-		res, err := service.CreateOrder(c, newOrder)
+		res, err := ctrl.orderSvc.CreateOrder(c, newOrder)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.OrderResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -41,11 +50,11 @@ func CreateOrder() gin.HandlerFunc {
 	}
 }
 
-func GetOrder() gin.HandlerFunc {
+func (ctrl *OrderController) GetOrder() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		orderId := c.Param("orderId")
 
-		res, err := service.GetOrderByID(c, orderId)
+		res, err := ctrl.orderSvc.GetOrderByID(c, orderId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.OrderResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -54,10 +63,10 @@ func GetOrder() gin.HandlerFunc {
 	}
 }
 
-func DeleteOrder() gin.HandlerFunc {
+func (ctrl *OrderController) DeleteOrder() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		orderId := c.Param("orderId")
-		res, err := service.DeleteOrder(c, orderId)
+		res, err := ctrl.orderSvc.DeleteOrder(c, orderId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.OrderResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -66,7 +75,7 @@ func DeleteOrder() gin.HandlerFunc {
 	}
 }
 
-func EditOrder() gin.HandlerFunc {
+func (ctrl *OrderController) EditOrder() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		orderId := c.Param("orderId")
 		var order *serialize.Order
@@ -90,7 +99,7 @@ func EditOrder() gin.HandlerFunc {
 			Status:        order.Status,
 		}
 
-		res, err := service.EditOrder(c, orderId, updateOrder)
+		res, err := ctrl.orderSvc.EditOrder(c, orderId, updateOrder)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.OrderResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
