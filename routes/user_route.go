@@ -21,7 +21,9 @@ func (r *Routes) UserRoute(router *gin.Engine) {
 			user.POST("/logout", middlewares.NewMiddlewares().LogoutUser())
 			//secured.GET("/users", r.userRoutes.GetAllUsers())
 		}
-		// forgotPass := api.Group("/forgot-password").Use(middlewares.CheckEmail())
+		api.POST("/forgot-password", r.userRoutes.ForgotPassword())
+		api.POST("/reset-password", r.userRoutes.ResetPassword())
+		//forgotPass := api.Group("/forgot-password").Use(middlewares.CheckEmail())
 		// {
 		// 	forgotPass.POST("/reset", r.userRoutes.ResetPassword())
 		// }

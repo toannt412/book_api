@@ -59,3 +59,11 @@ func (s *UserService) GetUserToken(ctx context.Context, token string) (model.Use
 	}
 	return res, nil
 }
+
+func (s *UserService) GetUserOTP(ctx context.Context, otp string) (model.User, error) {
+	res, err := s.userRepo.GetUserOTP(ctx, otp)
+	if err != nil {
+		return model.User{}, err
+	}
+	return res, nil
+}

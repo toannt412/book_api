@@ -14,6 +14,9 @@ type ConfigSchema struct {
 	Port       string
 	AccountSID string
 	AuthToken  string
+	FromPhone  string
+	ToPhone    string
+	ServiceSID string
 }
 
 func Load() {
@@ -27,5 +30,8 @@ func Load() {
 		Port:       os.Getenv("PORT"),
 		AccountSID: os.Getenv("TWILIO_ACCOUNT_SID"),
 		AuthToken:  os.Getenv("TWILIO_AUTH_TOKEN"),
+		FromPhone:  os.Getenv("FROM_PHONE"),
+		ToPhone:    os.Getenv("TO_PHONE"),
+		ServiceSID: os.Getenv("TWILIO_SERVICE_SID"),
 	}
 }

@@ -2,13 +2,20 @@ package user
 
 import (
 	"bookstore/auth"
+	"bookstore/configs"
 	"bookstore/dao"
 	"bookstore/dao/user/model"
 	"bookstore/helpers"
 	"bookstore/serialize"
 	"context"
+	"encoding/json"
 	"fmt"
 
+	"github.com/twilio/twilio-go"
+	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
+
+	//"github.com/twilio/twilio-go/client"
+	// openapi "github.com/twilio/twilio-go/rest/verify/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -209,10 +216,62 @@ func (repo *UserRepository) GetUserByPhone(ctx context.Context, phone string) (m
 	return user, nil
 }
 
-func (repo *UserRepository) ResetPassword(ctx context.Context, password string) (string, error) {
+func (repo *UserRepository) GetUserOTP(ctx context.Context, otp string) (model.User, error) {
+	var user model.User
+	err := repo.usersCollection.FindOne(ctx, bson.M{"code": otp}).Decode(&user)
+	if err != nil {
+		return model.User{}, err
+	}
+	return user, nil
+}
+
+func (repo *UserRepository) ForgotPassword(ctx context.Context, phone string) (string, error) {
+	//var user model.User
+	otp, err := helpers.GenerateOTP()
+	if err != nil {
+		return "", err
+	}
+	_, errGenerate := repo.usersCollection.UpdateOne(ctx, bson.M{"phone": phone}, bson.M{"$set": bson.M{"code": otp}})
+	if errGenerate != nil {
+		return "", errGenerate
+	}
+	otpString := "Your verification code is: " + otp
+	accountSid := configs.Config.AccountSID
+	authToken := configs.Config.AuthToken
+	client := twilio.NewRestClientWithParams(twilio.ClientParams{
+		Username: accountSid,
+		Password: authToken,
+	})
+
+	params := &twilioApi.CreateMessageParams{}
+	params.SetTo(configs.Config.ToPhone)
+	params.SetFrom(configs.Config.FromPhone)
+	params.SetBody(otpString)
+
+	resp, err := client.Api.CreateMessage(params)
+	if err != nil {
+		return "", err
+	} else {
+		response, _ := json.Marshal(*resp)
+		return string(response), nil
+	}
+}
+
+func (repo *UserRepository) ResetPassword(ctx context.Context, otp, password string) (string, error) {
 	hashedPassword, err := helpers.Hash(password)
 	if err != nil {
 		return "", err
 	}
-	return hashedPassword, nil
+
+	_, resetPass := repo.usersCollection.UpdateOne(ctx, bson.M{"code": otp}, bson.M{"$set": bson.M{"password": hashedPassword}})
+	if resetPass != nil {
+		return "", resetPass
+	}
+
+	_, deleteOTP := repo.usersCollection.UpdateOne(ctx, bson.M{"code": otp}, bson.M{"$set": bson.M{"code": ""}})
+	if deleteOTP != nil {
+		return "", deleteOTP
+	}
+	return "Reset Password Success", nil
+
 }

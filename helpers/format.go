@@ -12,8 +12,8 @@ func Santize(data string) string {
 	return data
 }
 
-func ValidatePhoneNumber(phoneNumber string) error {
-	const phoneNumberRegex = "^[0-9]{4,13}$"
+func IsValidatePhoneNumber(phoneNumber string) error {
+	const phoneNumberRegex = `^\+[1-9]\d{1,14}$`
 	matched, err := regexp.MatchString(phoneNumberRegex, phoneNumber)
 	if matched && err == nil {
 		return nil
