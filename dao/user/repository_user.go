@@ -13,9 +13,6 @@ import (
 
 	"github.com/twilio/twilio-go"
 	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
-
-	//"github.com/twilio/twilio-go/client"
-	// openapi "github.com/twilio/twilio-go/rest/verify/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -235,7 +232,6 @@ func (repo *UserRepository) ForgotPassword(ctx context.Context, phone string) (s
 	if errGenerate != nil {
 		return "", errGenerate
 	}
-	otpString := "Your verification code is: " + otp
 	accountSid := configs.Config.AccountSID
 	authToken := configs.Config.AuthToken
 	client := twilio.NewRestClientWithParams(twilio.ClientParams{
@@ -246,7 +242,7 @@ func (repo *UserRepository) ForgotPassword(ctx context.Context, phone string) (s
 	params := &twilioApi.CreateMessageParams{}
 	params.SetTo(configs.Config.ToPhone)
 	params.SetFrom(configs.Config.FromPhone)
-	params.SetBody(otpString)
+	params.SetBody("Your verification code is: " + otp)
 
 	resp, err := client.Api.CreateMessage(params)
 	if err != nil {
