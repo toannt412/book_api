@@ -199,7 +199,6 @@ func (ctrl *UserController) LoginAccount() gin.HandlerFunc {
 func (ctrl *UserController) ResetPassword() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		password := c.PostForm("password")
-		//phone := c.PostForm("phone")
 		otp := c.PostForm("code")
 		if govalidator.IsNull(otp) {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "All fields are required"}})
@@ -224,7 +223,6 @@ func (ctrl *UserController) ResetPassword() gin.HandlerFunc {
 
 func (ctrl *UserController) ForgotPassword() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		//email := c.PostForm("email")
 		phone := c.PostForm("phone")
 
 		if govalidator.IsNull(phone) {
@@ -247,5 +245,33 @@ func (ctrl *UserController) ForgotPassword() gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"message": "Please check your SMS", "data": res}})
+	}
+}
+
+func (ctrl *UserController) ChangePassword() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		phone := c.PostForm("phone")
+
+		if govalidator.IsNull(phone) {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "All fields are required"}})
+			return
+		}
+		errPhone := helpers.IsValidatePhoneNumber(phone)
+		if errPhone != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": errPhone.Error()}})
+			return
+		}
+		_, checkPhone := ctrl.userSvc.GetUserByPhone(c, phone)
+		if checkPhone != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Phone is not registered"}})
+			return
+		}
+		res, err := ctrl.userSvc.ForgotPassword(c, phone)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
+
 	}
 }

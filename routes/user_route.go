@@ -19,7 +19,8 @@ func (r *Routes) UserRoute(router *gin.Engine) {
 			user.PUT("/:userId", r.userRoutes.EditUser())
 			user.DELETE("/:userId", r.userRoutes.DeleteUser())
 			user.POST("/logout", middlewares.NewMiddlewares().LogoutUser())
-			//secured.GET("/users", r.userRoutes.GetAllUsers())
+			user.POST("/change-password", r.userRoutes.ChangePassword())
+			user.POST("/reset-password", r.userRoutes.ResetPassword())
 		}
 		api.POST("/forgot-password", r.userRoutes.ForgotPassword())
 		api.POST("/reset-password", r.userRoutes.ResetPassword())
