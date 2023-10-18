@@ -13,8 +13,13 @@ require (
 
 require (
 	github.com/golang/mock v1.6.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/mailersend/mailersend-go v1.4.0 // indirect
+	github.com/sendinblue/APIv3-go-library/v2 v2.1.2 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df // indirect
 )
 
 require (

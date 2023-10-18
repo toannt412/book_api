@@ -275,3 +275,29 @@ func (ctrl *UserController) ChangePassword() gin.HandlerFunc {
 
 	}
 }
+
+func (ctrl *UserController) ForgotPasswordUseEmail() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		email := c.PostForm("email")
+		if govalidator.IsNull(email) {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "All fields are required"}})
+			return
+		}
+		if !helpers.IsValidateEmail(email) {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Invalid email"}})
+			return
+		}
+		_, checkEmail := ctrl.userSvc.GetUserByEmail(c, email)
+		if checkEmail != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Email is not registered"}})
+			return
+		}
+		res, err := ctrl.userSvc.ForgotPasswordUseEmail(c, email)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
+
+	}
+}

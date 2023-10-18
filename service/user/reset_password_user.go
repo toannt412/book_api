@@ -19,3 +19,11 @@ func (s *UserService) ResetPassword(ctx context.Context, otp, password string) (
 	}
 	return result, nil
 }
+
+func (s *UserService) ForgotPasswordUseEmail(ctx context.Context, email string) (string, error) {
+	result, err := s.userRepo.ForgotPasswordUseEmail(ctx, email)
+	if err != nil {
+		return "", err
+	}
+	return result, nil
+}

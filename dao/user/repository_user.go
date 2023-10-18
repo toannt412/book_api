@@ -16,6 +16,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"gopkg.in/gomail.v2"
 )
 
 type UserRepository struct {
@@ -270,4 +271,35 @@ func (repo *UserRepository) ResetPassword(ctx context.Context, otp, password str
 	}
 	return "Reset Password Success", nil
 
+}
+
+func (repo *UserRepository) ForgotPasswordUseEmail(ctx context.Context, email string) (string, error) {
+	otp, err := helpers.GenerateOTP()
+	if err != nil {
+		return "", err
+	}
+	_, errGenerate := repo.usersCollection.UpdateOne(ctx, bson.M{"email": email}, bson.M{"$set": bson.M{"code": otp}})
+	if errGenerate != nil {
+		return "", errGenerate
+	}
+
+	from := configs.Config.FromEmail
+	host := configs.Config.SMTPHost
+	port := 587
+	apiKey := configs.Config.APIToken
+
+	msg := gomail.NewMessage()
+	msg.SetHeader("From", from)
+	msg.SetHeader("To", email)
+	msg.SetHeader("Subject", "OTP for forgot password")
+	// text/html for a html email
+	msg.SetBody("text/plain", "Your OTP is: " + otp)
+
+	n := gomail.NewDialer(host, port, from, apiKey)
+
+	// Send the email
+	if err := n.DialAndSend(msg); err != nil {
+		panic(err)
+	}
+	return "Send Email Success", nil
 }

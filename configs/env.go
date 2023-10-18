@@ -17,6 +17,10 @@ type ConfigSchema struct {
 	FromPhone  string
 	ToPhone    string
 	ServiceSID string
+	APIToken   string
+	FromEmail  string
+	ToEmail    string
+	SMTPHost   string
 }
 
 func Load() {
@@ -33,5 +37,9 @@ func Load() {
 		FromPhone:  os.Getenv("FROM_PHONE"),
 		ToPhone:    os.Getenv("TO_PHONE"),
 		ServiceSID: os.Getenv("TWILIO_SERVICE_SID"),
+		APIToken:   os.Getenv("API_TOKEN"),
+		FromEmail:  os.Getenv("FROM_EMAIL"),
+		ToEmail:    os.Getenv("TO_EMAIL"),
+		SMTPHost:   os.Getenv("SMTP_HOST"),
 	}
 }
