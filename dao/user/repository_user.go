@@ -2,21 +2,16 @@ package user
 
 import (
 	"bookstore/auth"
-	"bookstore/configs"
 	"bookstore/dao"
 	"bookstore/dao/user/model"
 	"bookstore/helpers"
 	"bookstore/serialize"
 	"context"
-	"encoding/json"
 	"fmt"
 
-	"github.com/twilio/twilio-go"
-	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"gopkg.in/gomail.v2"
 )
 
 type UserRepository struct {
@@ -223,83 +218,37 @@ func (repo *UserRepository) GetUserOTP(ctx context.Context, otp string) (model.U
 	return user, nil
 }
 
-func (repo *UserRepository) ForgotPassword(ctx context.Context, phone string) (string, error) {
-	//var user model.User
-	otp, err := helpers.GenerateOTP()
+func (repo *UserRepository) ForgotPassword(ctx context.Context, phone, otp string) error {
+	_, err := repo.usersCollection.UpdateOne(ctx, bson.M{"phone": phone}, bson.M{"$set": bson.M{"code": otp}})
 	if err != nil {
-		return "", err
+		return err
 	}
-	_, errGenerate := repo.usersCollection.UpdateOne(ctx, bson.M{"phone": phone}, bson.M{"$set": bson.M{"code": otp}})
-	if errGenerate != nil {
-		return "", errGenerate
-	}
-	accountSid := configs.Config.AccountSID
-	authToken := configs.Config.AuthToken
-	client := twilio.NewRestClientWithParams(twilio.ClientParams{
-		Username: accountSid,
-		Password: authToken,
-	})
-
-	params := &twilioApi.CreateMessageParams{}
-	params.SetTo(configs.Config.ToPhone)
-	params.SetFrom(configs.Config.FromPhone)
-	params.SetBody("Your verification code is: " + otp)
-
-	resp, err := client.Api.CreateMessage(params)
-	if err != nil {
-		return "", err
-	} else {
-		response, _ := json.Marshal(*resp)
-		return string(response), nil
-	}
+	return nil
 }
 
-func (repo *UserRepository) ResetPassword(ctx context.Context, otp, password string) (string, error) {
+func (repo *UserRepository) ResetPassword(ctx context.Context, otp, password string) error {
 	hashedPassword, err := helpers.Hash(password)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	_, resetPass := repo.usersCollection.UpdateOne(ctx, bson.M{"code": otp}, bson.M{"$set": bson.M{"password": hashedPassword}})
 	if resetPass != nil {
-		return "", resetPass
+		return resetPass
 	}
 
 	_, deleteOTP := repo.usersCollection.UpdateOne(ctx, bson.M{"code": otp}, bson.M{"$set": bson.M{"code": ""}})
 	if deleteOTP != nil {
-		return "", deleteOTP
+		return deleteOTP
 	}
-	return "Reset Password Success", nil
+	return nil
 
 }
 
-func (repo *UserRepository) ForgotPasswordUseEmail(ctx context.Context, email string) (string, error) {
-	otp, err := helpers.GenerateOTP()
-	if err != nil {
-		return "", err
-	}
+func (repo *UserRepository) ForgotPasswordUseEmail(ctx context.Context, email, otp string) error {
 	_, errGenerate := repo.usersCollection.UpdateOne(ctx, bson.M{"email": email}, bson.M{"$set": bson.M{"code": otp}})
 	if errGenerate != nil {
-		return "", errGenerate
+		return errGenerate
 	}
-
-	from := configs.Config.FromEmail
-	host := configs.Config.SMTPHost
-	port := 587
-	apiKey := configs.Config.APIToken
-
-	msg := gomail.NewMessage()
-	msg.SetHeader("From", from)
-	msg.SetHeader("To", email)
-	msg.SetHeader("Subject", "OTP for forgot password")
-	// text/html for a html email
-	msg.SetBody("text/plain", "Your OTP is: " + otp)
-
-	n := gomail.NewDialer(host, port, from, apiKey)
-
-	// Send the email
-	if err := n.DialAndSend(msg); err != nil {
-		panic(err)
-	}
-	return "Send Email Success", nil
+	return nil
 }
