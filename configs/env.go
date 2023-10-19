@@ -21,6 +21,7 @@ type ConfigSchema struct {
 	FromEmail  string
 	ToEmail    string
 	SMTPHost   string
+	SMTPPORT   string
 }
 
 func Load() {
@@ -41,5 +42,6 @@ func Load() {
 		FromEmail:  os.Getenv("FROM_EMAIL"),
 		ToEmail:    os.Getenv("TO_EMAIL"),
 		SMTPHost:   os.Getenv("SMTP_HOST"),
+		SMTPPORT:   os.Getenv("SMTP_PORT"),
 	}
 }

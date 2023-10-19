@@ -8,6 +8,7 @@ import (
 	"bookstore/serialize"
 	"context"
 	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -209,17 +210,9 @@ func (repo *UserRepository) GetUserByPhone(ctx context.Context, phone string) (m
 	return user, nil
 }
 
-func (repo *UserRepository) GetUserOTP(ctx context.Context, otp string) (model.User, error) {
-	var user model.User
-	err := repo.usersCollection.FindOne(ctx, bson.M{"code": otp}).Decode(&user)
-	if err != nil {
-		return model.User{}, err
-	}
-	return user, nil
-}
-
 func (repo *UserRepository) ForgotPassword(ctx context.Context, phone, otp string) error {
-	_, err := repo.usersCollection.UpdateOne(ctx, bson.M{"phone": phone}, bson.M{"$set": bson.M{"code": otp}})
+	//helpers.SetOTP(otp, &model.User{OTP: otp, OTPExpiry: time.Now().Add(5 * time.Minute)})
+	_, err := repo.usersCollection.UpdateOne(ctx, bson.M{"phone": phone}, bson.M{"$set": bson.M{"otp": otp, "otpexpiry": time.Now().Add(1 * time.Minute)}})
 	if err != nil {
 		return err
 	}
@@ -232,12 +225,12 @@ func (repo *UserRepository) ResetPassword(ctx context.Context, otp, password str
 		return err
 	}
 
-	_, resetPass := repo.usersCollection.UpdateOne(ctx, bson.M{"code": otp}, bson.M{"$set": bson.M{"password": hashedPassword}})
+	_, resetPass := repo.usersCollection.UpdateOne(ctx, bson.M{"otp": otp}, bson.M{"$set": bson.M{"password": hashedPassword}})
 	if resetPass != nil {
 		return resetPass
 	}
 
-	_, deleteOTP := repo.usersCollection.UpdateOne(ctx, bson.M{"code": otp}, bson.M{"$set": bson.M{"code": ""}})
+	_, deleteOTP := repo.usersCollection.UpdateOne(ctx, bson.M{"otp": otp}, bson.M{"$set": bson.M{"otp": "", "otpexpiry": time.Now()}})
 	if deleteOTP != nil {
 		return deleteOTP
 	}
@@ -246,7 +239,7 @@ func (repo *UserRepository) ResetPassword(ctx context.Context, otp, password str
 }
 
 func (repo *UserRepository) ForgotPasswordUseEmail(ctx context.Context, email, otp string) error {
-	_, errGenerate := repo.usersCollection.UpdateOne(ctx, bson.M{"email": email}, bson.M{"$set": bson.M{"code": otp}})
+	_, errGenerate := repo.usersCollection.UpdateOne(ctx, bson.M{"email": email}, bson.M{"$set": bson.M{"otp": otp, "otpexpiry": time.Now().Add(1 * time.Minute)}})
 	if errGenerate != nil {
 		return errGenerate
 	}

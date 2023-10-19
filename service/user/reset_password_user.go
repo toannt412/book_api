@@ -5,6 +5,8 @@ import (
 	"bookstore/helpers"
 	"context"
 	"encoding/json"
+	"errors"
+	"strconv"
 
 	"github.com/twilio/twilio-go"
 	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
@@ -16,10 +18,12 @@ func (s *UserService) ForgotPassword(ctx context.Context, phone string) (string,
 	if err != nil {
 		return "", err
 	}
+
 	errSaveOTP := s.userRepo.ForgotPassword(ctx, phone, otp)
 	if err != nil {
 		return "", errSaveOTP
 	}
+
 	accountSid := configs.Config.AccountSID
 	authToken := configs.Config.AuthToken
 	client := twilio.NewRestClientWithParams(twilio.ClientParams{
@@ -41,7 +45,11 @@ func (s *UserService) ForgotPassword(ctx context.Context, phone string) (string,
 	}
 }
 
-func (s *UserService) ResetPassword(ctx context.Context, otp, password string) (string, error) {
+func (s *UserService) ResetPassword(ctx context.Context, otp, password, phone string) (string, error) {
+	user, _ := s.userRepo.GetUserByPhone(ctx, phone)
+	if !helpers.VerifyOTP(&user, otp) {
+		return "", errors.New("invalid otp")
+	}
 	err := s.userRepo.ResetPassword(ctx, otp, password)
 	if err != nil {
 		return "", err
@@ -60,8 +68,11 @@ func (s *UserService) ForgotPasswordUseEmail(ctx context.Context, email string) 
 	}
 	from := configs.Config.FromEmail
 	host := configs.Config.SMTPHost
-	port := 587
 	apiKey := configs.Config.APIToken
+	port, err := strconv.Atoi(configs.Config.SMTPPORT)
+	if err != nil {
+		return "", err
+	}
 
 	msg := gomail.NewMessage()
 	msg.SetHeader("From", from)

@@ -199,18 +199,14 @@ func (ctrl *UserController) LoginAccount() gin.HandlerFunc {
 func (ctrl *UserController) ResetPassword() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		password := c.PostForm("password")
-		otp := c.PostForm("code")
+		otp := c.PostForm("otp")
+		phone := c.PostForm("phone")
 		if govalidator.IsNull(otp) {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "All fields are required"}})
 			return
 		}
 
-		_, isValidOTP := ctrl.userSvc.GetUserOTP(c, otp)
-		if isValidOTP != nil {
-			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": isValidOTP.Error()}})
-			return
-		}
-		res, err := ctrl.userSvc.ResetPassword(c, otp, password)
+		res, err := ctrl.userSvc.ResetPassword(c, otp, password, phone)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
