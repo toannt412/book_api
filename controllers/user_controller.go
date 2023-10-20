@@ -187,12 +187,12 @@ func (ctrl *UserController) LoginAccount() gin.HandlerFunc {
 		password = helpers.Santize(password)
 		user, err := ctrl.userSvc.GetUserByUserName(c, username)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Invalid username or password"}})
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "wrong username or password"}})
 			return
 		}
 		checkPass := helpers.CheckPasswordHash(user.Password, password)
 		if checkPass != nil {
-			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Invalid username or password"}})
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "wrong username or password"}})
 			return
 		}
 		token, err := ctrl.userSvc.Login(c, username, password)
