@@ -100,18 +100,11 @@ func (repo *AuthorRepository) EditAuthor(ctx context.Context, authorID string, a
 	if err != nil {
 		return &serialize.Author{}, err
 	}
-	// opts := options.FindOneAndUpdate().SetUpsert(true)
-	// errUpdate := repo.authorsCollection.FindOneAndUpdate(ctx, bson.M{"_id": objID}, bson.M{"$set": model}, opts).Decode(&model)
-	// if errUpdate != nil {
-	// 	return &serialize.Author{}, errUpdate
-	// }
+
 	_, errUpdate := repo.authorsCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": model})
 	if errUpdate != nil {
 		return &serialize.Author{}, errUpdate
 	}
-	// if result.MatchedCount == 0 {
-	// 	return &serialize.Author{}, mongo.ErrNoDocuments
-	// }
 
 	return &serialize.Author{
 		Id:          model.Id,
