@@ -155,7 +155,7 @@ func (ctrl *UserController) RegisterAccount() gin.HandlerFunc {
 		email = helpers.Santize(email)
 		phone = helpers.Santize(phone)
 
-		errFindUsername := ctrl.userSvc.GetUserByUserName(c, username)
+		_, errFindUsername := ctrl.userSvc.GetUserByUserName(c, username)
 		_, errFindEmail := ctrl.userSvc.GetUserByEmail(c, email)
 
 		if errFindEmail == nil || errFindUsername == nil {
@@ -185,7 +185,16 @@ func (ctrl *UserController) LoginAccount() gin.HandlerFunc {
 
 		username = helpers.Santize(username)
 		password = helpers.Santize(password)
-
+		user, err := ctrl.userSvc.GetUserByUserName(c, username)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Invalid username or password"}})
+			return
+		}
+		checkPass := helpers.CheckPasswordHash(user.Password, password)
+		if checkPass != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Invalid username or password"}})
+			return
+		}
 		token, err := ctrl.userSvc.Login(c, username, password)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": token}})
@@ -201,7 +210,7 @@ func (ctrl *UserController) ResetPassword() gin.HandlerFunc {
 		password := c.PostForm("password")
 		otp := c.PostForm("otp")
 		phone := c.PostForm("phone")
-		if govalidator.IsNull(otp) {
+		if govalidator.IsNull(otp) || govalidator.IsNull(password) || govalidator.IsNull(phone) {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "All fields are required"}})
 			return
 		}
@@ -247,8 +256,9 @@ func (ctrl *UserController) ForgotPasswordUsePhone() gin.HandlerFunc {
 func (ctrl *UserController) ChangePassword() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		phone := c.PostForm("phone")
+		password := c.PostForm("password")
 
-		if govalidator.IsNull(phone) {
+		if govalidator.IsNull(phone) || govalidator.IsNull(password) {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "All fields are required"}})
 			return
 		}
@@ -257,9 +267,14 @@ func (ctrl *UserController) ChangePassword() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": errPhone.Error()}})
 			return
 		}
-		_, checkPhone := ctrl.userSvc.GetUserByPhone(c, phone)
+		user, checkPhone := ctrl.userSvc.GetUserByPhone(c, phone)
 		if checkPhone != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Phone is not registered"}})
+			return
+		}
+		checkPass := helpers.CheckPasswordHash(user.Password, password)
+		if checkPass != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "wrong password"}})
 			return
 		}
 		res, err := ctrl.userSvc.SendOTPByPhone(c, phone)

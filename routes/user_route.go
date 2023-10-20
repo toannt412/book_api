@@ -20,15 +20,11 @@ func (r *Routes) UserRoute(router *gin.Engine) {
 			user.DELETE("/:userId", r.userRoutes.DeleteUser())
 			user.POST("/logout", middlewares.NewMiddlewares().LogoutUser())
 			user.POST("/change-password", r.userRoutes.ChangePassword())
-			user.POST("/reset-password", r.userRoutes.ResetPassword())
 		}
 		api.POST("/forgot-password", r.userRoutes.ForgotPasswordUsePhone())
 		api.POST("/reset-password", r.userRoutes.ResetPassword())
 		api.POST("/forgot-password-use-email", r.userRoutes.ForgotPasswordUseEmail())
-		//forgotPass := api.Group("/forgot-password").Use(middlewares.CheckEmail())
-		// {
-		// 	forgotPass.POST("/reset", r.userRoutes.ResetPassword())
-		// }
+
 	}
 
 }

@@ -7,7 +7,6 @@ import (
 	"bookstore/helpers"
 	"bookstore/serialize"
 	"context"
-	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -67,32 +66,24 @@ func (repo *UserRepository) RegisterAccount(ctx context.Context, username, passw
 
 }
 
-func (repo *UserRepository) LoginAccount(ctx context.Context, username, password string) (model.User, string, error) {
+func (repo *UserRepository) LoginAccount(ctx context.Context, username, password string) (string, error) {
 	var user model.User
 	var find bson.M
 	err := repo.usersCollection.FindOne(context.TODO(), bson.M{"username": username}).Decode(&find)
 	if err != nil {
-		return model.User{}, "", err
+		return "", err
 	}
 
-	//Convert interface to string
-	hashedPassword := fmt.Sprintf("%v", find["password"])
-	err = helpers.CheckPasswordHash(hashedPassword, password)
-	if err != nil {
-		return model.User{}, "", err
-	}
-
-	//token, errCreate := helpers.CreateJWT(username)
 	token, err := auth.GenerateJWT(user.Email, user.UserName)
 	if err != nil {
-		return model.User{}, "", err
+		return "", err
 	}
 	userID := find["_id"]
 	_, errAddToken := repo.usersCollection.UpdateOne(context.TODO(), bson.M{"_id": userID}, bson.M{"$set": bson.M{"token": token}})
 	if errAddToken != nil {
-		return model.User{}, "", errAddToken
+		return "", errAddToken
 	}
-	return user, token, nil
+	return token, nil
 
 }
 
@@ -233,9 +224,6 @@ func (repo *UserRepository) ResetPassword(ctx context.Context, otp, password str
 	}
 
 	_, deleteOTP := repo.usersCollection.UpdateOne(ctx, bson.M{"otp": otp}, bson.M{"$set": bson.M{"otp": "", "otpexpiry": time.Now()}})
-	if deleteOTP != nil {
-		return false
-	}
-	return true
+	return deleteOTP == nil
 
 }

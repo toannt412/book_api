@@ -29,12 +29,12 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (model.U
 	return user, nil
 }
 
-func (s *UserService) GetUserByUserName(ctx context.Context, username string) error {
-	_, err := s.userRepo.GetUserByUserName(ctx, username)
+func (s *UserService) GetUserByUserName(ctx context.Context, username string) (model.User, error) {
+	user, err := s.userRepo.GetUserByUserName(ctx, username)
 	if err != nil {
-		return err
+		return model.User{}, err
 	}
-	return nil
+	return user,nil
 }
 
 func (s *UserService) GetAllUsers(ctx context.Context) ([]model.User, error) {
