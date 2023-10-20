@@ -28,6 +28,7 @@ func (s *OrderService) CreateOrder(cxt context.Context, newOrder *serialize.Orde
 		TotalQuantity: result.TotalQuantity,
 		TotalPrice:    result.TotalPrice,
 		TotalAmount:   result.TotalAmount,
+		OrderDate:     result.OrderDate,
 		Status:        result.Status,
 	}, nil
 }

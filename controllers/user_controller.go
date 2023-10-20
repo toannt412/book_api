@@ -217,7 +217,7 @@ func (ctrl *UserController) ResetPassword() gin.HandlerFunc {
 	}
 }
 
-func (ctrl *UserController) ForgotPassword() gin.HandlerFunc {
+func (ctrl *UserController) ForgotPasswordUsePhone() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		phone := c.PostForm("phone")
 
@@ -235,7 +235,7 @@ func (ctrl *UserController) ForgotPassword() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Phone is not registered"}})
 			return
 		}
-		res, err := ctrl.userSvc.ForgotPassword(c, phone)
+		res, err := ctrl.userSvc.SendOTPByPhone(c, phone)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -262,7 +262,7 @@ func (ctrl *UserController) ChangePassword() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Phone is not registered"}})
 			return
 		}
-		res, err := ctrl.userSvc.ForgotPassword(c, phone)
+		res, err := ctrl.userSvc.SendOTPByPhone(c, phone)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -288,7 +288,7 @@ func (ctrl *UserController) ForgotPasswordUseEmail() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": "Email is not registered"}})
 			return
 		}
-		res, err := ctrl.userSvc.ForgotPasswordUseEmail(c, email)
+		res, err := ctrl.userSvc.SendOTPByEmail(c, email)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return

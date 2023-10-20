@@ -24,9 +24,11 @@ func (s *OrderService) EditOrder(cxt context.Context, orderID string, updateOrde
 		Id:            result.Id,
 		UserID:        result.UserID,
 		Books:         bookSlice,
+		CartID:        result.CartID,
 		TotalQuantity: result.TotalQuantity,
 		TotalPrice:    result.TotalPrice,
 		TotalAmount:   result.TotalAmount,
+		OrderDate:     result.OrderDate,
 		Status:        result.Status,
 	}, nil
 }

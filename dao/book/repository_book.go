@@ -22,29 +22,18 @@ func NewBookRepository() *BookRepository {
 	}
 }
 
-func (repo *BookRepository) CreateBook(ctx context.Context, newBook *serialize.Book) (model.Book, error) {
-	result, err := repo.booksCollection.InsertOne(ctx, newBook)
-	if err != nil {
-		return model.Book{}, err
-	}
-	if result.InsertedID != nil {
-		err := repo.booksCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&newBook)
-		if err != nil {
-			return model.Book{}, err
-		}
-	}
-
-	categories := make([]model.Category, len(newBook.CategoryIDs))
+func (repo *BookRepository) CreateBook(ctx context.Context, newBook *serialize.Book) (*serialize.Book, error) {
+	categorySlice := make([]model.Category, len(newBook.CategoryIDs))
 	for i, cate := range newBook.CategoryIDs {
-		categories[i] = model.Category{
+		categorySlice[i] = model.Category{
 			Id:      cate.Id,
 			CatName: cate.CatName,
 		}
 	}
 
-	authors := make([]model.Author, len(newBook.AuthorID))
+	authorSlice := make([]model.Author, len(newBook.AuthorID))
 	for i, author := range newBook.AuthorID {
-		authors[i] = model.Author{
+		authorSlice[i] = model.Author{
 			Id:          author.Id,
 			AuthorName:  author.AuthorName,
 			DateOfBirth: author.DateOfBirth,
@@ -52,13 +41,53 @@ func (repo *BookRepository) CreateBook(ctx context.Context, newBook *serialize.B
 			Alive:       author.Alive,
 		}
 	}
-	return model.Book{
+
+	model := model.Book{
 		Id:                newBook.Id,
 		BookName:          newBook.BookName,
 		Price:             newBook.Price,
 		PublishingCompany: newBook.PublishingCompany,
 		PublicationDate:   newBook.PublicationDate,
 		Description:       newBook.Description,
+		CategoryIDs:       categorySlice,
+		AuthorID:          authorSlice,
+	}
+	result, err := repo.booksCollection.InsertOne(ctx, model)
+	if err != nil {
+		return &serialize.Book{}, err
+	}
+	if result.InsertedID != nil {
+		err := repo.booksCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&model)
+		if err != nil {
+			return &serialize.Book{}, err
+		}
+	}
+
+	categories := make([]serialize.Category, len(model.CategoryIDs))
+	for i, cate := range model.CategoryIDs {
+		categories[i] = serialize.Category{
+			Id:      cate.Id,
+			CatName: cate.CatName,
+		}
+	}
+
+	authors := make([]serialize.Author, len(model.AuthorID))
+	for i, author := range model.AuthorID {
+		authors[i] = serialize.Author{
+			Id:          author.Id,
+			AuthorName:  author.AuthorName,
+			DateOfBirth: author.DateOfBirth,
+			HomeTown:    author.HomeTown,
+			Alive:       author.Alive,
+		}
+	}
+	return &serialize.Book{
+		Id:                model.Id,
+		BookName:          model.BookName,
+		Price:             model.Price,
+		PublishingCompany: model.PublishingCompany,
+		PublicationDate:   model.PublicationDate,
+		Description:       model.Description,
 		CategoryIDs:       categories,
 		AuthorID:          authors,
 	}, nil
@@ -103,25 +132,53 @@ func (repo *BookRepository) DeleteBook(ctx context.Context, bookID string) (stri
 	return "Deleted successfully", nil
 }
 
-func (repo *BookRepository) EditBook(ctx context.Context, bookID string, book *serialize.Book) (model.Book, error) {
+func (repo *BookRepository) EditBook(ctx context.Context, bookID string, book *serialize.Book) (*serialize.Book, error) {
+	categorySlice := make([]model.Category, len(book.CategoryIDs))
+	for i, cate := range book.CategoryIDs {
+		categorySlice[i] = model.Category{
+			Id:      cate.Id,
+			CatName: cate.CatName,
+		}
+	}
+
+	authorSlice := make([]model.Author, len(book.AuthorID))
+	for i, author := range book.AuthorID {
+		authorSlice[i] = model.Author{
+			Id:          author.Id,
+			AuthorName:  author.AuthorName,
+			DateOfBirth: author.DateOfBirth,
+			HomeTown:    author.HomeTown,
+			Alive:       author.Alive,
+		}
+	}
+	model := model.Book{
+		Id:                book.Id,
+		BookName:          book.BookName,
+		Price:             book.Price,
+		PublishingCompany: book.PublishingCompany,
+		PublicationDate:   book.PublicationDate,
+		Description:       book.Description,
+		CategoryIDs:       categorySlice,
+		AuthorID:          authorSlice,
+	}
 	objID, err := primitive.ObjectIDFromHex(bookID)
 	if err != nil {
-		return model.Book{}, err
+		return &serialize.Book{}, err
 	}
 
-	result, err := repo.booksCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": book})
+	result, err := repo.booksCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": model})
 	if err != nil {
-		return model.Book{}, err
+		return &serialize.Book{}, err
 	}
 
-	var updatedBook model.Book
+	var updatedBook *serialize.Book
 	if result.MatchedCount == 1 {
 		err := repo.booksCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&updatedBook)
 		if err != nil {
-			return model.Book{}, err
+			return &serialize.Book{}, err
 		}
 	}
-	return model.Book{
+	return &serialize.Book{
 		Id:                objID,
 		BookName:          updatedBook.BookName,
 		Price:             updatedBook.Price,

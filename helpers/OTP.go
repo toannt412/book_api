@@ -22,14 +22,6 @@ func GenerateOTP() (string, error) {
 	return string(buffer), nil
 }
 
-func SetOTP(otp string, user *model.User) {
-	//otp, _ := GenerateOTP()
-	expiry := time.Now().Add(5 * time.Minute)
-
-	user.OTP = otp
-	user.OTPExpiry = expiry
-}
-
 func VerifyOTP(user *model.User, otp string) bool {
 	return user.OTP == otp && time.Now().Before(user.OTPExpiry)
 }

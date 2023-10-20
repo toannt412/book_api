@@ -22,20 +22,24 @@ func NewCategoryRepository() *CategoryRepository {
 	}
 }
 
-func (repo *CategoryRepository) CreateCategory(ctx context.Context, newCategory *serialize.Category) (model.Category, error) {
-	result, err := repo.categoriesCollection.InsertOne(ctx, newCategory)
-	if err != nil {
-		return model.Category{}, err
-	}
-	if result.InsertedID != nil {
-		err := repo.categoriesCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&newCategory)
-		if err != nil {
-			return model.Category{}, err
-		}
-	}
-	return model.Category{
+func (repo *CategoryRepository) CreateCategory(ctx context.Context, newCategory *serialize.Category) (*serialize.Category, error) {
+	model := model.Category{
 		Id:      newCategory.Id,
 		CatName: newCategory.CatName,
+	}
+	result, err := repo.categoriesCollection.InsertOne(ctx, model)
+	if err != nil {
+		return &serialize.Category{}, err
+	}
+	if result.InsertedID != nil {
+		err := repo.categoriesCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&model)
+		if err != nil {
+			return &serialize.Category{}, err
+		}
+	}
+	return &serialize.Category{
+		Id:      model.Id,
+		CatName: model.CatName,
 	}, nil
 }
 
@@ -78,20 +82,20 @@ func (repo *CategoryRepository) DeleteCategory(ctx context.Context, categoryID s
 	return "Deleted successfully", err
 }
 
-func (repo *CategoryRepository) EditCategory(ctx context.Context, categoryID string, category *serialize.Category) (model.Category, error) {
+func (repo *CategoryRepository) EditCategory(ctx context.Context, categoryID string, category *serialize.Category) (*serialize.Category, error) {
 	objID, err := primitive.ObjectIDFromHex(categoryID)
 	if err != nil {
-		return model.Category{}, err
+		return &serialize.Category{}, err
 	}
 	update := bson.M{"_id": objID, "categoryname": category.CatName}
 	result, err := repo.categoriesCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": update})
 	if err != nil {
-		return model.Category{}, err
+		return &serialize.Category{}, err
 	}
 	if result.ModifiedCount == 0 {
-		return model.Category{}, err
+		return &serialize.Category{}, err
 	}
-	return model.Category{
+	return &serialize.Category{
 		Id:      objID,
 		CatName: category.CatName,
 	}, nil

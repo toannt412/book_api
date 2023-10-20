@@ -22,17 +22,7 @@ func NewCartRepository() *CartRepository {
 	}
 }
 
-func (repo *CartRepository) CreateCart(cxt context.Context, cart *serialize.Cart) (model.Cart, error) {
-	result, err := repo.cartsCollection.InsertOne(cxt, cart)
-	if err != nil {
-		return model.Cart{}, err
-	}
-	if result.InsertedID != nil {
-		err := repo.cartsCollection.FindOne(cxt, bson.M{"_id": result.InsertedID}).Decode(&cart)
-		if err != nil {
-			return model.Cart{}, err
-		}
-	}
+func (repo *CartRepository) CreateCart(cxt context.Context, cart *serialize.Cart) (*serialize.Cart, error) {
 	bookSlice := make([]model.CartBook, len(cart.Books))
 	for i, book := range cart.Books {
 		bookSlice[i] = model.CartBook{
@@ -43,12 +33,39 @@ func (repo *CartRepository) CreateCart(cxt context.Context, cart *serialize.Cart
 			Total:    book.Total,
 		}
 	}
-	return model.Cart{
+	model := model.Cart{
 		Id:            cart.Id,
 		UserID:        cart.UserID,
 		Books:         bookSlice,
 		TotalQuantity: cart.TotalQuantity,
 		TotalAmount:   cart.TotalAmount,
+	}
+	result, err := repo.cartsCollection.InsertOne(cxt, model)
+	if err != nil {
+		return &serialize.Cart{}, err
+	}
+	if result.InsertedID != nil {
+		err := repo.cartsCollection.FindOne(cxt, bson.M{"_id": result.InsertedID}).Decode(&model)
+		if err != nil {
+			return &serialize.Cart{}, err
+		}
+	}
+	books := make([]serialize.CartBook, len(model.Books))
+	for i, book := range model.Books {
+		books[i] = serialize.CartBook{
+			BookID:   book.BookID,
+			BookName: book.BookName,
+			Price:    book.Price,
+			Quantity: book.Quantity,
+			Total:    book.Total,
+		}
+	}
+	return &serialize.Cart{
+		Id:            model.Id,
+		UserID:        model.UserID,
+		Books:         books,
+		TotalQuantity: model.TotalQuantity,
+		TotalAmount:   model.TotalAmount,
 	}, nil
 }
 
@@ -74,24 +91,51 @@ func (repo *CartRepository) DeleteCart(cxt context.Context, cartID string) (stri
 	return "Deleted successfully", nil
 }
 
-func (repo *CartRepository) EditCart(cxt context.Context, cartID string, cart *serialize.Cart) (model.Cart, error) {
+func (repo *CartRepository) EditCart(cxt context.Context, cartID string, cart *serialize.Cart) (*serialize.Cart, error) {
 	objID, _ := primitive.ObjectIDFromHex(cartID)
-	result, err := repo.cartsCollection.UpdateOne(cxt, bson.M{"_id": objID}, bson.M{"$set": cart})
-	if err != nil {
-		return model.Cart{}, err
+	bookSlice := make([]model.CartBook, len(cart.Books))
+	for i, book := range cart.Books {
+		bookSlice[i] = model.CartBook{
+			BookID:   book.BookID,
+			BookName: book.BookName,
+			Price:    book.Price,
+			Quantity: book.Quantity,
+			Total:    book.Total,
+		}
 	}
-	var updatedCart model.Cart
+	model := model.Cart{
+		Id:            objID,
+		UserID:        cart.UserID,
+		Books:         bookSlice,
+		TotalQuantity: cart.TotalQuantity,
+		TotalAmount:   cart.TotalAmount,
+	}
+	result, err := repo.cartsCollection.UpdateOne(cxt, bson.M{"_id": objID}, bson.M{"$set": model})
+	if err != nil {
+		return &serialize.Cart{}, err
+	}
+	var updatedCart serialize.Cart
 	if result.MatchedCount == 1 {
 		err := repo.cartsCollection.FindOne(cxt, bson.M{"_id": objID}).Decode(&updatedCart)
 		if err != nil {
-			return model.Cart{}, err
+			return &serialize.Cart{}, err
 		}
 	}
-	return model.Cart{
-		Id:            updatedCart.Id,
-		UserID:        updatedCart.UserID,
-		Books:         updatedCart.Books,
-		TotalQuantity: updatedCart.TotalQuantity,
-		TotalAmount:   updatedCart.TotalAmount,
+	books := make([]serialize.CartBook, len(model.Books))
+	for i, book := range model.Books {
+		books[i] = serialize.CartBook{
+			BookID:   book.BookID,
+			BookName: book.BookName,
+			Price:    book.Price,
+			Quantity: book.Quantity,
+			Total:    book.Total,
+		}
+	}
+	return &serialize.Cart{
+		Id:            model.Id,
+		UserID:        model.UserID,
+		Books:         books,
+		TotalQuantity: model.TotalQuantity,
+		TotalAmount:   model.TotalAmount,
 	}, nil
 }

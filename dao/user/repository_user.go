@@ -210,38 +210,32 @@ func (repo *UserRepository) GetUserByPhone(ctx context.Context, phone string) (m
 	return user, nil
 }
 
-func (repo *UserRepository) ForgotPassword(ctx context.Context, phone, otp string) error {
+func (repo *UserRepository) SaveOTPByPhone(ctx context.Context, phone, otp string) bool {
 	//helpers.SetOTP(otp, &model.User{OTP: otp, OTPExpiry: time.Now().Add(5 * time.Minute)})
 	_, err := repo.usersCollection.UpdateOne(ctx, bson.M{"phone": phone}, bson.M{"$set": bson.M{"otp": otp, "otpexpiry": time.Now().Add(1 * time.Minute)}})
-	if err != nil {
-		return err
-	}
-	return nil
+	return err == nil
 }
 
-func (repo *UserRepository) ResetPassword(ctx context.Context, otp, password string) error {
+func (repo *UserRepository) SaveOTPByEmail(ctx context.Context, email, otp string) bool {
+	_, err := repo.usersCollection.UpdateOne(ctx, bson.M{"email": email}, bson.M{"$set": bson.M{"otp": otp, "otpexpiry": time.Now().Add(1 * time.Minute)}})
+	return err == nil
+}
+
+func (repo *UserRepository) ResetPassword(ctx context.Context, otp, password string) bool {
 	hashedPassword, err := helpers.Hash(password)
 	if err != nil {
-		return err
+		return false
 	}
 
 	_, resetPass := repo.usersCollection.UpdateOne(ctx, bson.M{"otp": otp}, bson.M{"$set": bson.M{"password": hashedPassword}})
 	if resetPass != nil {
-		return resetPass
+		return false
 	}
 
 	_, deleteOTP := repo.usersCollection.UpdateOne(ctx, bson.M{"otp": otp}, bson.M{"$set": bson.M{"otp": "", "otpexpiry": time.Now()}})
 	if deleteOTP != nil {
-		return deleteOTP
+		return false
 	}
-	return nil
+	return true
 
-}
-
-func (repo *UserRepository) ForgotPasswordUseEmail(ctx context.Context, email, otp string) error {
-	_, errGenerate := repo.usersCollection.UpdateOne(ctx, bson.M{"email": email}, bson.M{"$set": bson.M{"otp": otp, "otpexpiry": time.Now().Add(1 * time.Minute)}})
-	if errGenerate != nil {
-		return errGenerate
-	}
-	return nil
 }

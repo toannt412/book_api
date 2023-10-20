@@ -81,18 +81,6 @@ func (m *Middlewares) LogoutAdmin() gin.HandlerFunc {
 				return
 			}
 		}
-		// var find bson.M
-		// checkToken := adminsCollection.FindOne(c, bson.M{"token": tokenString}).Decode(&find)
-		// if checkToken == nil {
-		// 	filter := bson.M{"_id": find["_id"]}
-		// 	update := bson.M{"$unset": bson.M{"token": ""}}
-		// 	_, err := adminsCollection.UpdateOne(c, filter, update)
-		// 	if err != nil {
-		// 		c.JSON(401, gin.H{"error": err.Error()})
-		// 		c.Abort()
-		// 		return
-		// 	}
-		// }
 		c.JSON(200, gin.H{"status": "logout success"})
 	}
 }
@@ -119,12 +107,6 @@ func (m *Middlewares) AuthUser() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		// err := auth.ValidateToken(tokenString)
-		// if err != nil {
-		// 	c.JSON(401, gin.H{"error": err.Error()})
-		// 	c.Abort()
-		// 	return
-		// }
 		c.Next()
 	}
 }

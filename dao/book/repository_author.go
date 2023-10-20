@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type AuthorRepository struct {
@@ -22,23 +23,30 @@ func NewAuthorRepository() *AuthorRepository {
 	}
 }
 
-func (repo *AuthorRepository) CreateAuthor(ctx context.Context, newAuthor *serialize.Author) (model.Author, error) {
-	result, err := repo.authorsCollection.InsertOne(ctx, newAuthor)
-	if err != nil {
-		return model.Author{}, err
-	}
-	if result.InsertedID != nil {
-		err := repo.authorsCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&newAuthor)
-		if err != nil {
-			return model.Author{}, err
-		}
-	}
-	return model.Author{
+func (repo *AuthorRepository) CreateAuthor(ctx context.Context, newAuthor *serialize.Author) (*serialize.Author, error) {
+	model := model.Author{
 		Id:          newAuthor.Id,
 		AuthorName:  newAuthor.AuthorName,
 		DateOfBirth: newAuthor.DateOfBirth,
 		HomeTown:    newAuthor.HomeTown,
 		Alive:       newAuthor.Alive,
+	}
+	result, err := repo.authorsCollection.InsertOne(ctx, model)
+	if err != nil {
+		return &serialize.Author{}, err
+	}
+	if result.InsertedID != nil {
+		err := repo.authorsCollection.FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&model)
+		if err != nil {
+			return &serialize.Author{}, err
+		}
+	}
+	return &serialize.Author{
+		Id:          model.Id,
+		AuthorName:  model.AuthorName,
+		DateOfBirth: model.DateOfBirth,
+		HomeTown:    model.HomeTown,
+		Alive:       model.Alive,
 	}, nil
 }
 
@@ -81,35 +89,34 @@ func (repo *AuthorRepository) DeleteAuthor(ctx context.Context, authorID string)
 	return "Deleted successfully", nil
 }
 
-func (repo *AuthorRepository) EditAuthor(ctx context.Context, authorID string, author *serialize.Author) (model.Author, error) {
+func (repo *AuthorRepository) EditAuthor(ctx context.Context, authorID string, author *serialize.Author) (*serialize.Author, error) {
+	model := model.Author{
+
+		AuthorName:  author.AuthorName,
+		DateOfBirth: author.DateOfBirth,
+		HomeTown:    author.HomeTown,
+		Alive:       author.Alive,
+	}
 	objID, err := primitive.ObjectIDFromHex(authorID)
 	if err != nil {
-		return model.Author{}, err
+		return &serialize.Author{}, err
 	}
-	// opts := options.FindOneAndUpdate().SetUpsert(true)
+	opts := options.FindOneAndUpdate().SetUpsert(false)
+	repo.authorsCollection.FindOneAndUpdate(ctx, bson.M{"_id": objID}, bson.M{"$set": model}, opts)
 
-	// er := authorsCollection.FindOneAndUpdate(ctx, bson.M{"_id": objID}, bson.M{"$set": author}, opts).Decode(&author)
-	// if er != nil {
-	// 	return model.Author{}, er
+	//repo.authorsCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": model})
+	// if err != nil {
+	// 	return &serialize.Author{}, err
 	// }
-	result, err := repo.authorsCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": author})
-	if err != nil {
-		return model.Author{}, err
-	}
-	if result.MatchedCount == 0 {
-		return model.Author{}, mongo.ErrNoDocuments
-	}
+	// if result.MatchedCount == 0 {
+	// 	return &serialize.Author{}, mongo.ErrNoDocuments
+	// }
 
-	var updatedAuthor model.Author
-	if err := repo.authorsCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&updatedAuthor); err != nil {
-		return model.Author{}, err
-	}
-
-	return model.Author{
-		Id:          updatedAuthor.Id,
-		AuthorName:  updatedAuthor.AuthorName,
-		DateOfBirth: updatedAuthor.DateOfBirth,
-		HomeTown:    updatedAuthor.HomeTown,
-		Alive:       updatedAuthor.Alive,
+	return &serialize.Author{
+		Id:          model.Id,
+		AuthorName:  model.AuthorName,
+		DateOfBirth: model.DateOfBirth,
+		HomeTown:    model.HomeTown,
+		Alive:       model.Alive,
 	}, nil
 }

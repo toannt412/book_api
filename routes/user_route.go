@@ -22,7 +22,7 @@ func (r *Routes) UserRoute(router *gin.Engine) {
 			user.POST("/change-password", r.userRoutes.ChangePassword())
 			user.POST("/reset-password", r.userRoutes.ResetPassword())
 		}
-		api.POST("/forgot-password", r.userRoutes.ForgotPassword())
+		api.POST("/forgot-password", r.userRoutes.ForgotPasswordUsePhone())
 		api.POST("/reset-password", r.userRoutes.ResetPassword())
 		api.POST("/forgot-password-use-email", r.userRoutes.ForgotPasswordUseEmail())
 		//forgotPass := api.Group("/forgot-password").Use(middlewares.CheckEmail())

@@ -76,7 +76,6 @@ func (ctrl *CartController) EditACart() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cartId := c.Param("cartId")
 		var cart *serialize.Cart
-		objId, _ := primitive.ObjectIDFromHex(cartId)
 
 		//validate the request body
 		if err := c.BindJSON(&cart); err != nil {
@@ -85,7 +84,6 @@ func (ctrl *CartController) EditACart() gin.HandlerFunc {
 		}
 
 		updateCart := &serialize.Cart{
-			Id:            objId,
 			UserID:        cart.UserID,
 			Books:         cart.Books,
 			TotalQuantity: cart.TotalQuantity,

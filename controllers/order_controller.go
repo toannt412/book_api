@@ -79,7 +79,7 @@ func (ctrl *OrderController) EditOrder() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		orderId := c.Param("orderId")
 		var order *serialize.Order
-		objId, _ := primitive.ObjectIDFromHex(orderId)
+		//objId, _ := primitive.ObjectIDFromHex(orderId)
 
 		//validate the request body
 		if err := c.BindJSON(&order); err != nil {
@@ -88,7 +88,7 @@ func (ctrl *OrderController) EditOrder() gin.HandlerFunc {
 		}
 
 		updateOrder := &serialize.Order{
-			Id:            objId,
+			Id:            order.Id,
 			UserID:        order.UserID,
 			Books:         order.Books,
 			CartID:        order.CartID,
