@@ -27,5 +27,5 @@ type Author struct {
 	AuthorName  string             `json:"authorname" bson:"authorname,omitempty"`
 	DateOfBirth time.Time          `json:"dateofbirth" bson:"dateofbirth,omitempty"`
 	HomeTown    string             `json:"hometown" bson:"hometown,omitempty"`
-	Alive       bool               `json:"alive" bson:"alive,omitempty"`
+	Alive       bool               `json:"alive" bson:"alive"`
 }

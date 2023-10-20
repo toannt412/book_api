@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type AuthorRepository struct {
@@ -91,23 +90,25 @@ func (repo *AuthorRepository) DeleteAuthor(ctx context.Context, authorID string)
 
 func (repo *AuthorRepository) EditAuthor(ctx context.Context, authorID string, author *serialize.Author) (*serialize.Author, error) {
 	model := model.Author{
-
+		Id:          author.Id,
 		AuthorName:  author.AuthorName,
 		DateOfBirth: author.DateOfBirth,
 		HomeTown:    author.HomeTown,
 		Alive:       author.Alive,
 	}
-	objID, err := primitive.ObjectIDFromHex(authorID)
+	objID, err := primitive.ObjectIDFromHex(author.Id.Hex())
 	if err != nil {
 		return &serialize.Author{}, err
 	}
-	opts := options.FindOneAndUpdate().SetUpsert(false)
-	repo.authorsCollection.FindOneAndUpdate(ctx, bson.M{"_id": objID}, bson.M{"$set": model}, opts)
-
-	//repo.authorsCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": model})
-	// if err != nil {
-	// 	return &serialize.Author{}, err
+	// opts := options.FindOneAndUpdate().SetUpsert(true)
+	// errUpdate := repo.authorsCollection.FindOneAndUpdate(ctx, bson.M{"_id": objID}, bson.M{"$set": model}, opts).Decode(&model)
+	// if errUpdate != nil {
+	// 	return &serialize.Author{}, errUpdate
 	// }
+	_, errUpdate := repo.authorsCollection.UpdateOne(ctx, bson.M{"_id": objID}, bson.M{"$set": model})
+	if errUpdate != nil {
+		return &serialize.Author{}, errUpdate
+	}
 	// if result.MatchedCount == 0 {
 	// 	return &serialize.Author{}, mongo.ErrNoDocuments
 	// }

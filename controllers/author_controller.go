@@ -72,7 +72,7 @@ func (ctrl *AuthorController) GetAllAuthors() gin.HandlerFunc {
 func (ctrl *AuthorController) EditAuthor() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authorId := c.Param("authorId")
-		//ojbId, _ := primitive.ObjectIDFromHex(authorId)
+		ojbId, _ := primitive.ObjectIDFromHex(authorId)
 		var author *serialize.Author
 
 		if err := c.BindJSON(&author); err != nil {
@@ -81,6 +81,7 @@ func (ctrl *AuthorController) EditAuthor() gin.HandlerFunc {
 		}
 
 		update := &serialize.Author{
+			Id:          ojbId,
 			AuthorName:  author.AuthorName,
 			DateOfBirth: author.DateOfBirth,
 			HomeTown:    author.HomeTown,
