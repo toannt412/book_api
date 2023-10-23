@@ -5,6 +5,7 @@ import (
 
 	"bookstore/configs"
 	"bookstore/routes"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,5 +45,5 @@ func main() {
 	// 		"data": "Hello from Gin-gonic & MongoDB",
 	// 	})
 	// })
-	router.Run(configs.Config.Port)
+	router.Run(fmt.Sprintf(":%s", configs.Config.Port))
 }
