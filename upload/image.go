@@ -1,7 +1,0 @@
-package upload
-
-import (
-	
-)
-
-// UploadImage ...
