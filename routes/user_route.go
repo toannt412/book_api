@@ -24,7 +24,9 @@ func (r *Routes) UserRoute(router *gin.Engine) {
 		api.POST("/forgot-password", r.userRoutes.ForgotPasswordUsePhone())
 		api.POST("/reset-password", r.userRoutes.ResetPassword())
 		api.POST("/forgot-password-use-email", r.userRoutes.ForgotPasswordUseEmail())
-
+		api.POST("/upload-image", r.userRoutes.UploadImage())
+		api.GET("/get-image/:objectKey", r.userRoutes.GetImageFromBucket())
+		api.GET("/upload-image-use-presigned-url", r.userRoutes.UploadImageUsePresignedURL())
 	}
 
 }

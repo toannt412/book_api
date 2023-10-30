@@ -23,6 +23,8 @@ type ConfigSchema struct {
 	SMTPHost   string
 	SMTPPORT   string
 	HashCost   string
+	AWSRegion  string
+	BucketName string
 }
 
 func Load() {
@@ -45,5 +47,7 @@ func Load() {
 		SMTPHost:   os.Getenv("SMTP_HOST"),
 		SMTPPORT:   os.Getenv("SMTP_PORT"),
 		HashCost:   os.Getenv("HASH_COST"),
+		AWSRegion:  os.Getenv("AWS_REGION"),
+		BucketName: os.Getenv("BUCKET_NAME"),
 	}
 }

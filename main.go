@@ -1,8 +1,6 @@
 package main
 
 import (
-	//"net/http"
-
 	"bookstore/configs"
 	"bookstore/routes"
 	"fmt"
@@ -20,6 +18,7 @@ func NewRoutes(router *gin.Engine) *Routes {
 	}
 }
 func main() {
+
 	configs.Load()
 	router := gin.Default()
 	//run database

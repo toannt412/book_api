@@ -312,3 +312,47 @@ func (ctrl *UserController) ForgotPasswordUseEmail() gin.HandlerFunc {
 
 	}
 }
+
+func (ctrl *UserController) UploadImage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		file, handler, err := c.Request.FormFile("file")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		defer file.Close()
+		fileName := handler.Filename
+		errUpload := ctrl.userSvc.UploadImage(c, file, fileName)
+		if errUpload != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": errUpload.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "upload success"}})
+
+	}
+}
+
+func (ctr *UserController) GetImageFromBucket() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		objectKey := c.Param("objectKey")
+		request, errDownload := ctr.userSvc.GetPresignedURL(objectKey)
+		if errDownload != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": errDownload.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": request}})
+	}
+}
+
+func (ctr *UserController) UploadImageUsePresignedURL() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		nameObject := c.Request.FormValue("objectKey")
+		objectKey := nameObject + "_" + helpers.GenerateStringName()
+		request, errDownload := ctr.userSvc.UploadImageUsePresignedURL(objectKey)
+		if errDownload != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": errDownload.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": request}})
+	}
+}
