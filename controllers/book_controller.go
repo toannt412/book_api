@@ -26,15 +26,12 @@ func (ctrl *BookController) CreateBook() gin.HandlerFunc {
 		var book *serialize.Book
 		//validate the request body
 		if err := c.BindJSON(&book); err != nil {
-			c.JSON(http.StatusBadRequest, responses.BookResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusBadRequest, responses.BookResponse{
+				Status:  http.StatusBadRequest,
+				Message: "error",
+				Data:    map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		// TIM HIEU NAY LAI
-		// //use the validator library to validate required fields
-		// if validationErr := validate.Struct(&user); validationErr != nil {
-		// 	c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": validationErr.Error()}})
-		// 	return
-		// }
 
 		newBook := &serialize.Book{
 			Id:                primitive.NewObjectID(),
@@ -49,11 +46,17 @@ func (ctrl *BookController) CreateBook() gin.HandlerFunc {
 
 		res, err := ctrl.bookSvc.CreateBook(c, newBook)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.BookResponse{
+				Status:  http.StatusInternalServerError,
+				Message: "error",
+				Data:    map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusCreated, responses.BookResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": res}})
+		c.JSON(http.StatusCreated, responses.BookResponse{
+			Status:  http.StatusCreated,
+			Message: "success",
+			Data:    map[string]interface{}{"data": res}})
 	}
 }
 
