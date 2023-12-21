@@ -74,7 +74,7 @@ func (repo *UserRepository) LoginAccount(ctx context.Context, username, password
 		return "", err
 	}
 
-	token, err := auth.GenerateJWT(user.Email, user.UserName)
+	token, err := auth.GenerateJWT(user.Email, username)
 	if err != nil {
 		return "", err
 	}

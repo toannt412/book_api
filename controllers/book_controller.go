@@ -68,11 +68,31 @@ func (ctrl *BookController) GetBook() gin.HandlerFunc {
 
 		res, err := ctrl.bookSvc.GetBookByID(c, bookId)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.BookResponse{
+				Status:  http.StatusInternalServerError,
+				Message: "error",
+				Data:    map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
+		c.JSON(http.StatusOK, responses.BookResponse{
+			Status:  http.StatusOK,
+			Message: "success",
+			Data:    map[string]interface{}{"data": res}})
+	}
+}
+
+// GET ALL
+func (ctrl *BookController) GetAllBooks() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		res, err := ctrl.bookSvc.GetAllBooks(c)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK,
+			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}},
+		)
 	}
 }
 
@@ -120,20 +140,6 @@ func (ctrl *BookController) DeleteBook() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 
-		}
-		c.JSON(http.StatusOK,
-			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}},
-		)
-	}
-}
-
-// GET ALL
-func (ctrl *BookController) GetAllBooks() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		res, err := ctrl.bookSvc.GetAllBooks(c)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.BookResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
 		}
 		c.JSON(http.StatusOK,
 			responses.BookResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}},

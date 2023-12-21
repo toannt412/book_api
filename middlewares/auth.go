@@ -21,7 +21,6 @@ func NewMiddlewares() *Middlewares {
 }
 func (m *Middlewares) AuthAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		//adminsCollection := admin.NewAdminRepository()
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
 			c.JSON(401, gin.H{"error": "request does not contain an access token"})
@@ -36,24 +35,13 @@ func (m *Middlewares) AuthAdmin() gin.HandlerFunc {
 			return
 
 		}
-		// err := adminsCollection.FindOne(c, bson.M{"token": tokenString})
-		// if err.Err() != nil {
-		// 	c.JSON(401, gin.H{"error": "token is invalid"})
-		// 	c.Abort()
-		// 	return
-		// }
+
 		isValidToken := auth.CheckValidToken(tokenString)
 		if isValidToken != nil {
 			c.JSON(401, gin.H{"error": isValidToken})
 			c.Abort()
 			return
 		}
-		// err := auth.ValidateToken(tokenString)
-		// if err != nil {
-		// 	c.JSON(401, gin.H{"error": err.Error()})
-		// 	c.Abort()
-		// 	return
-		// }
 		c.Next()
 	}
 }
@@ -138,26 +126,3 @@ func (m *Middlewares) LogoutUser() gin.HandlerFunc {
 		c.JSON(200, gin.H{"status": "logout success"})
 	}
 }
-
-// func CheckEmail() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		email := c.PostForm("email")
-// 		if govalidator.IsNull(email) {
-// 			c.JSON(400, gin.H{"error": "All fields are required"})
-// 			c.Abort()
-// 			return
-// 		}
-// 		if !govalidator.IsEmail(email) {
-// 			c.JSON(400, gin.H{"error": "Invalid email"})
-// 			c.Abort()
-// 			return
-// 		}
-// 		_, errFindEmail := service.GetUserByEmail(c, email)
-// 		if errFindEmail != nil {
-// 			c.JSON(400, gin.H{"error": "Email not registered"})
-// 			return
-// 		}
-// 		c.Next()
-// 	}
-
-// }
