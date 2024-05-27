@@ -221,8 +221,6 @@ func (ctrl *UserController) ResetPassword() gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": res}})
-
-		//c.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
 	}
 }
 

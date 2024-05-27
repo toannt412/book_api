@@ -6,15 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// type AdminRoute struct {
-// 	adminRoutes *controllers.AdminController
-// }
-
-//	func NewAdminRoute() *AdminRoute {
-//		return &AdminRoute{
-//			adminRoutes: controllers.NewAdminController(),
-//		}
-//	}
 func (r *Routes) AdminRoute(router *gin.Engine) {
 
 	router.POST("/admin/login", r.adminRoutes.LoginAccountAdmin())

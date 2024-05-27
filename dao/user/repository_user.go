@@ -202,7 +202,6 @@ func (repo *UserRepository) GetUserByPhone(ctx context.Context, phone string) (m
 }
 
 func (repo *UserRepository) SaveOTPByPhone(ctx context.Context, phone, otp string) bool {
-	//helpers.SetOTP(otp, &model.User{OTP: otp, OTPExpiry: time.Now().Add(5 * time.Minute)})
 	_, err := repo.usersCollection.UpdateOne(ctx, bson.M{"phone": phone}, bson.M{"$set": bson.M{"otp": otp, "otpexpiry": time.Now().Add(1 * time.Minute)}})
 	return err == nil
 }

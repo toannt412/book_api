@@ -1,3 +1,5 @@
 .env
 .vscode
 .aws
+
+_debug*
