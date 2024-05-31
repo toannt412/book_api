@@ -2,4 +2,4 @@
 .vscode
 .aws
 
-_debug*
+__debug_bin*
